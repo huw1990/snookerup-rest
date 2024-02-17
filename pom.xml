@@ -12,7 +12,7 @@
 	<artifactId>snookerup-rest</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>snookerup-rest</name>
-	<description>Demo project for Spring Boot</description>
+	<description>REST API for SnookerUp</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
@@ -42,6 +42,18 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.17.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.17.2</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
