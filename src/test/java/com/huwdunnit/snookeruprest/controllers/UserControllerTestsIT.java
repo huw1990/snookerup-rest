@@ -1,7 +1,9 @@
 package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.BaseIT;
+import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.User;
+import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -52,6 +54,27 @@ public class UserControllerTestsIT extends BaseIT {
                 (userInDb) -> assertEquals(userInResponse, userInDb, "User returned in response is different to user in DB"),
                 () -> fail("User with ID from response not found in the DB")
         );
+    }
+
+    @Test
+    void addUser_Should_Return400Response_When_EmailAlreadyExists() throws Exception {
+        User userToAdd = getNewUserForTest();
+
+        // Add user to DB before running test
+        User existingUser = getNewUserForTest();
+        existingUser.setId(IdGenerator.createNewId());
+        userRepository.insert(existingUser);
+
+        // Now add same user via REST (error expected)
+        String requestBody = objectMapper.writeValueAsString(userToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value(ErrorResponse.DUPLICATE_FIELD))
+                .andReturn();
     }
 
     private User getNewUserForTest() {
