@@ -3,10 +3,16 @@ package com.huwdunnit.snookeruprest.controllers;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.UserRepository;
 import com.huwdunnit.snookeruprest.model.User;
+import com.huwdunnit.snookeruprest.model.UserListResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * REST Controller for User endpoints.
@@ -33,5 +39,19 @@ public class UserController {
 
         log.debug("Returning new user {}", addedUser);
         return addedUser;
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public UserListResponse getAllUsers(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
+                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize) {
+        log.debug("getAllUsers pageNumber={}, pageSize={}", pageNumber, pageSize);
+
+        Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
+        Page<User> usersPage = userRepository.findAll(pageConstraints);
+        UserListResponse userListResponse = new UserListResponse(usersPage);
+
+        log.debug("Returning user list={}", userListResponse);
+        return userListResponse;
     }
 }
