@@ -19,6 +19,8 @@ public class ErrorResponse {
 
     public static final String USER_NOT_FOUND = "User not found";
 
+    public static final String ROUTINE_NOT_FOUND = "Routine not found";
+
     private String errorMessage;
 
     public static ErrorResponse createDuplicateValueErrorResponse() {
@@ -27,5 +29,9 @@ public class ErrorResponse {
 
     public static ErrorResponse createUserNotFoundErrorResponse() {
         return ErrorResponse.builder().errorMessage(USER_NOT_FOUND).build();
+    }
+
+    public static ErrorResponse createRoutineNotFoundErrorResponse() {
+        return ErrorResponse.builder().errorMessage(ROUTINE_NOT_FOUND).build();
     }
 }

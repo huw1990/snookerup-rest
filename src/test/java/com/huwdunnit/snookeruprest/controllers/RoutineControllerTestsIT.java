@@ -149,6 +149,31 @@ public class RoutineControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @Test
+    void getRoutineById_Should_Return200ResponseWithRoutine_When_RoutineExists() throws Exception {
+        String routineId = "1234";
+        Routine lineUpInDb = getLineUpRoutine();
+        lineUpInDb.setId(routineId);
+        routineRepository.insert(lineUpInDb);
+
+        mockMvc.perform(get("/api/v1/routines/{routine-id}", routineId))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(lineUpInDb.getId()),
+                        jsonPath("$.title").value(lineUpInDb.getTitle()),
+                        jsonPath("$.description").value(lineUpInDb.getDescription()));
+    }
+
+    @Test
+    void getRoutineById_Should_Return404Response_When_RoutineNotFound() throws Exception {
+        String invalidRoutineId = "1234";
+
+        mockMvc.perform(get("/api/v1/routines/{routine-id}", invalidRoutineId))
+                .andExpect(status().isNotFound())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Routine not found"));
+    }
+
     private Routine getLineUpRoutine() {
         return createRoutine(LINEUP_TITLE, LINEUP_DESC);
     }

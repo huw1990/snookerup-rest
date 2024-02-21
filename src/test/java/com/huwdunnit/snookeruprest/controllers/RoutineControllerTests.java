@@ -2,6 +2,7 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
+import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
 import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.RoutineListResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -133,6 +135,47 @@ public class RoutineControllerTests {
         assertEquals(2, routinesResponse.getPageSize());
         assertEquals(2, routinesResponse.getTotalPages());
         assertEquals(3L, routinesResponse.getTotalItems());
+    }
+
+    @Test
+    public void getRoutineById_Should_ReturnRoutine_When_RoutineWithIdExists() {
+        // Define variables
+        String routineId = "1234";
+        Routine lineUpRoutine = getLineUpRoutine();
+        lineUpRoutine.setId(routineId);
+
+        // Set mock expectations
+        when(mockRoutineRepository.findById(routineId)).thenReturn(Optional.of(lineUpRoutine));
+
+        // Execute method under test
+        Routine returnedRoutine = routineController.getRoutineById(routineId);
+
+        // Verify
+        assertNotNull(returnedRoutine);
+        assertEquals(lineUpRoutine, returnedRoutine);
+
+        verify(mockRoutineRepository).findById(routineId);
+    }
+
+    @Test
+    public void getRoutineById_Should_ThrowRoutineNotFoundException_When_RoutineNotFound() {
+        // Define variables
+        String routineId = "1234";
+
+        // Set mock expectations
+        when(mockRoutineRepository.findById(routineId)).thenReturn(Optional.empty());
+
+        // Execute method under test
+        Routine returnedRoutine = null;
+        try {
+            returnedRoutine = routineController.getRoutineById(routineId);
+            fail("Expected RoutineNotFoundException");
+        } catch (RoutineNotFoundException ex) {
+            // Exception thrown as expected
+        }
+
+        // Verify
+        assertNull(returnedRoutine);
     }
 
     private Routine getLineUpRoutine() {

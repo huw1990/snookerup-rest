@@ -1,8 +1,10 @@
 package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
+import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
 import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.RoutineListResponse;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,5 +38,17 @@ public class RoutineController {
 
         log.debug("Returning routine list={}", routineListResponse);
         return routineListResponse;
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Routine getRoutineById(@PathVariable(name = "id") @NotBlank String routineId) {
+        log.debug("getRoutine routineId={}", routineId);
+
+        Routine routineResponse = routineRepository.findById(routineId).orElseThrow(
+                () -> new RoutineNotFoundException("Routine not found, ID=" + routineId, routineId));
+
+        log.debug("Returning routine={}", routineResponse);
+        return routineResponse;
     }
 }
