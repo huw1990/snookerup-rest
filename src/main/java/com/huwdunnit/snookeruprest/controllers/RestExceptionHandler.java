@@ -1,5 +1,6 @@
 package com.huwdunnit.snookeruprest.controllers;
 
+import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
 import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,15 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.createDuplicateValueErrorResponse();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler({UserNotFoundException.class})
+    public ResponseEntity<Object> handleUserNotFound(UserNotFoundException ex, WebRequest request) {
+        log.error("handleUserNotFound ex={}, request={}", ex, request);
+
+        ErrorResponse errorResponse = ErrorResponse.createUserNotFoundErrorResponse();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
 }

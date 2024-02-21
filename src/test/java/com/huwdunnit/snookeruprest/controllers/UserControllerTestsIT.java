@@ -205,6 +205,32 @@ public class UserControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @Test
+    void getSpecificUser_Should_Return200ResponseWithSingleUser_When_Called() throws Exception {
+        String userId = "1234";
+        User ronnieUser = getRonnieUser();
+        ronnieUser.setId(userId);
+        userRepository.insert(ronnieUser);
+
+        mockMvc.perform(get("/api/v1/users/{user-id}", userId))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(ronnieUser.getId()),
+                        jsonPath("$.firstName").value(ronnieUser.getFirstName()),
+                        jsonPath("$.lastName").value(ronnieUser.getLastName()),
+                        jsonPath("$.email").value(ronnieUser.getEmail()));
+    }
+
+    @Test
+    void getSpecificUser_Should_Return404Response_When_UserNotFound() throws Exception {
+        String invalidUserId = "1234";
+
+        mockMvc.perform(get("/api/v1/users/{user-id}", invalidUserId))
+                .andExpect(status().isNotFound())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("User not found"));
+    }
+
     private User getRonnieUser() {
         return createUser(RONNIE_FIRST_NAME, RONNIE_LAST_NAME, RONNIE_EMAIL);
     }

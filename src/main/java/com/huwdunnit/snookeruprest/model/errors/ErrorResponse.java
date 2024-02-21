@@ -17,9 +17,15 @@ public class ErrorResponse {
 
     public static final String DUPLICATE_FIELD = "Duplicate value error";
 
+    public static final String USER_NOT_FOUND = "User not found";
+
     private String errorMessage;
 
     public static ErrorResponse createDuplicateValueErrorResponse() {
         return ErrorResponse.builder().errorMessage(DUPLICATE_FIELD).build();
+    }
+
+    public static ErrorResponse createUserNotFoundErrorResponse() {
+        return ErrorResponse.builder().errorMessage(USER_NOT_FOUND).build();
     }
 }

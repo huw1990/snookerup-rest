@@ -1,6 +1,7 @@
 package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.UserRepository;
+import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.model.UserListResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -186,5 +188,49 @@ public class UserControllerTests {
         assertEquals(2, usersResponse.getPageSize());
         assertEquals(2, usersResponse.getTotalPages());
         assertEquals(3L, usersResponse.getTotalItems());
+    }
+
+    @Test
+    public void getUserById_Should_ReturnUser_When_UserWithIdExists() {
+        // Define variables
+        String userId = "1234";
+        User ronnieUser = new User();
+        ronnieUser.setEmail(RONNIE_EMAIL);
+        ronnieUser.setFirstName(RONNIE_FIRST_NAME);
+        ronnieUser.setLastName(RONNIE_LAST_NAME);
+        ronnieUser.setId(userId);
+
+        // Set mock expectations
+        when(mockUserRepository.findById(userId)).thenReturn(Optional.of(ronnieUser));
+
+        // Execute method under test
+        User returnedUser = userController.getUserById(userId);
+
+        // Verify
+        assertNotNull(returnedUser);
+        assertEquals(ronnieUser, returnedUser);
+
+        verify(mockUserRepository).findById(userId);
+    }
+
+    @Test
+    public void getSpecificUser_Should_ThrowUserNotFoundException_When_UserNotFound() {
+        // Define variables
+        String userId = "1234";
+
+        // Set mock expectations
+        when(mockUserRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Execute method under test
+        User returnedUser = null;
+        try {
+            returnedUser = userController.getUserById(userId);
+            fail("Expected UserNotFoundException");
+        } catch (UserNotFoundException ex) {
+            // Exception thrown as expected
+        }
+
+        // Verify
+        assertNull(returnedUser);
     }
 }

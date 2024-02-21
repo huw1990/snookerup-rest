@@ -2,8 +2,10 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.UserRepository;
+import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.model.UserListResponse;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -53,5 +55,17 @@ public class UserController {
 
         log.debug("Returning user list={}", userListResponse);
         return userListResponse;
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public User getUserById(@PathVariable(name = "id") @NotBlank String userId) {
+        log.debug("getUser userId={}", userId);
+
+        User userResponse = userRepository.findById(userId).orElseThrow(
+                () -> new UserNotFoundException("User not found, ID=" + userId, userId));
+
+        log.debug("Returning user={}", userResponse);
+        return userResponse;
     }
 }
