@@ -214,7 +214,7 @@ public class UserControllerTests {
     }
 
     @Test
-    public void getSpecificUser_Should_ThrowUserNotFoundException_When_UserNotFound() {
+    public void getUserById_Should_ThrowUserNotFoundException_When_UserNotFound() {
         // Define variables
         String userId = "1234";
 

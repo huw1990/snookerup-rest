@@ -206,7 +206,7 @@ public class UserControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getSpecificUser_Should_Return200ResponseWithSingleUser_When_Called() throws Exception {
+    void getUserById_Should_Return200ResponseWithUser_When_UserExists() throws Exception {
         String userId = "1234";
         User ronnieUser = getRonnieUser();
         ronnieUser.setId(userId);
@@ -222,7 +222,7 @@ public class UserControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getSpecificUser_Should_Return404Response_When_UserNotFound() throws Exception {
+    void getUserById_Should_Return404Response_When_UserNotFound() throws Exception {
         String invalidUserId = "1234";
 
         mockMvc.perform(get("/api/v1/users/{user-id}", invalidUserId))
