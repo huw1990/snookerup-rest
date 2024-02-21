@@ -1,6 +1,7 @@
 package com.huwdunnit.snookeruprest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.db.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,9 @@ public abstract class BaseIT {
     @Autowired
     protected UserRepository userRepository;
 
+    @Autowired
+    protected RoutineRepository routineRepository;
+
     protected MockMvc mockMvc;
 
     protected ObjectMapper objectMapper = new ObjectMapper();
@@ -54,5 +58,6 @@ public abstract class BaseIT {
     @AfterEach
     public void afterEach() {
         userRepository.deleteAll();
+        routineRepository.deleteAll();
     }
 }
