@@ -2,11 +2,14 @@ package com.huwdunnit.snookeruprest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
+import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.db.UserRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -44,9 +47,20 @@ public abstract class BaseIT {
     @Autowired
     protected RoutineRepository routineRepository;
 
+    @Autowired
+    protected ScoreRepository scoreRepository;
+
     protected MockMvc mockMvc;
 
-    protected ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    @DynamicPropertySource
+    static void setDynamicProperties(DynamicPropertyRegistry registry) {
+        // Testcontainers randomly selects ports, so get these on the running container and update app properties accordingly.
+        registry.add("spring.data.mongodb.host", MONGODB_CONTAINER::getHost);
+        registry.add("spring.data.mongodb.port", MONGODB_CONTAINER::getFirstMappedPort);
+    }
 
     @BeforeEach
     public void setup() {
@@ -59,5 +73,6 @@ public abstract class BaseIT {
     public void afterEach() {
         userRepository.deleteAll();
         routineRepository.deleteAll();
+        scoreRepository.deleteAll();
     }
 }
