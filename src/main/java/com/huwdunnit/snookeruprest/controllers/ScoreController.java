@@ -75,4 +75,12 @@ public class ScoreController {
         log.debug("Returning score={}", scoreResponse);
         return scoreResponse;
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
+        log.debug("deleteScoreById scoreId={}", scoreId);
+
+        scoreRepository.deleteById(scoreId);
+    }
 }

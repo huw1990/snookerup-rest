@@ -220,6 +220,38 @@ public class ScoreControllerTests {
         assertNull(returnedScore);
     }
 
+    @Test
+    public void deleteScoreById_Should_DeleteScore_When_ScoreWithIdExists() {
+        // Define variables
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(scoreId);
+
+        // Set mock expectations
+        when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.of(scoreOne));
+
+        // Execute method under test
+        scoreController.deleteScoreById(scoreId);
+
+        // Verify
+        verify(mockScoreRepository).deleteById(scoreId);
+    }
+
+    @Test
+    public void deleteScoreById_Should_DoNothing_When_ScoreNotFound() {
+        // Define variables
+        String scoreId = "1234";
+
+        // Set mock expectations
+        when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.empty());
+
+        // Execute method under test
+        scoreController.deleteScoreById(scoreId);
+
+        // Verify
+        verify(mockScoreRepository).deleteById(scoreId);
+    }
+
     private Score getScoreOne() {
         Score scoreToAdd = new Score();
         scoreToAdd.setValue(100);

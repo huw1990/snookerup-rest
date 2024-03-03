@@ -14,10 +14,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -249,6 +247,29 @@ public class ScoreControllerTestsIT extends BaseIT {
                 .andExpect(status().isNotFound())
                 .andExpectAll(
                         jsonPath("$.errorMessage").value("Score not found"));
+    }
+
+    @Test
+    void deleteScoreById_Should_Return204Response_When_ScoreExisted() throws Exception {
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(scoreId);
+        scoreRepository.insert(scoreOneInDb);
+
+        mockMvc.perform(delete("/api/v1/scores/{score-id}", scoreId))
+                .andExpect(status().isNoContent());
+
+        // Verify the score has been deleted from the DB
+        Optional<Score> opt = scoreRepository.findById(scoreId);
+        assertTrue(opt.isEmpty());
+    }
+
+    @Test
+    void getScoreById_Should_Return204Response_When_ScoreDidntExist() throws Exception {
+        String invalidScoreId = "1234";
+
+        mockMvc.perform(delete("/api/v1/scores/{score-id}", invalidScoreId))
+                .andExpect(status().isNoContent());
     }
 
     private Score getScoreOne() {
