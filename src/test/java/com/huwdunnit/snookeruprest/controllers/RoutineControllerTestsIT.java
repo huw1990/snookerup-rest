@@ -43,13 +43,13 @@ public class RoutineControllerTestsIT extends BaseIT {
             Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.""";
 
     @Test
-    void getAllRoutines_Should_EmptyUsersPage_When_NoRoutinesInDb() throws Exception {
+    void getAllRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDb() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
         int expectedNumberOfPages = 0;
         int expectedTotalItems = 0;
 
-        // Get the first page of users
+        // Get the first page of routines
         mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}",
                         pageSize, pageToGet))
                 .andExpect(status().isOk())
@@ -64,7 +64,7 @@ public class RoutineControllerTestsIT extends BaseIT {
 
     @Test
     void getAllRoutines_Should_RoutinesInOnePage_When_OnlyTwoRoutinesInDb() throws Exception {
-        // Add users to DB before running test
+        // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
         routineRepository.insert(lineUpInDb);
@@ -77,7 +77,7 @@ public class RoutineControllerTestsIT extends BaseIT {
         int expectedNumberOfPages = 1;
         int expectedTotalItems = 2;
 
-        // Get the first page of users
+        // Get the first page of routines
         mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}",
                         pageSize, pageToGet))
                 .andExpect(status().isOk())
@@ -98,7 +98,7 @@ public class RoutineControllerTestsIT extends BaseIT {
 
     @Test
     void getAllRoutines_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
-        // Add users to DB before running test
+        // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
         routineRepository.insert(lineUpInDb);
@@ -114,7 +114,7 @@ public class RoutineControllerTestsIT extends BaseIT {
         int expectedNumberOfPages = 2;
         int expectedTotalItems = 3;
 
-        // Get the first page of users
+        // Get the first page of routines
         mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}",
                         pageSize, pageToGet))
                 .andExpect(status().isOk())
@@ -134,7 +134,7 @@ public class RoutineControllerTestsIT extends BaseIT {
 
 
         pageToGet = 1;
-        // Get the second page of users
+        // Get the second page of routines
         mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}",
                         pageSize, pageToGet))
                 .andExpect(status().isOk())

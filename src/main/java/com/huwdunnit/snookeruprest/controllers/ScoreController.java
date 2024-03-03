@@ -4,9 +4,7 @@ import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.db.UserRepository;
 import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
-import com.huwdunnit.snookeruprest.model.Score;
-import com.huwdunnit.snookeruprest.model.User;
-import com.huwdunnit.snookeruprest.model.UserListResponse;
+import com.huwdunnit.snookeruprest.model.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -43,12 +42,26 @@ public class ScoreController {
 
         if (scoreToAdd.getDateAndTime() == null) {
             log.debug("Score to add didn't have date/time set, so adding it now");
-            scoreToAdd.setDateAndTime(LocalDateTime.now());
+            scoreToAdd.setDateAndTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
         }
 
         Score addedScore = scoreRepository.insert(scoreToAdd);
 
         log.debug("Returning new score {}", addedScore);
         return addedScore;
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public ScoreListResponse getAllScores(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
+                                              @RequestParam(defaultValue = "50", name = "pageSize") int pageSize) {
+        log.debug("getAllScores pageNumber={}, pageSize={}", pageNumber, pageSize);
+
+        Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
+        Page<Score> scoresPage = scoreRepository.findAll(pageConstraints);
+        ScoreListResponse scoreListResponse = new ScoreListResponse(scoresPage);
+
+        log.debug("Returning score list={}", scoreListResponse);
+        return scoreListResponse;
     }
 }
