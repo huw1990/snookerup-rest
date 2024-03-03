@@ -2,6 +2,9 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
+import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
+import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
+import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.Score;
 import com.huwdunnit.snookeruprest.model.ScoreListResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -173,6 +177,47 @@ public class ScoreControllerTests {
         assertEquals(2, scoresResponse.getPageSize());
         assertEquals(2, scoresResponse.getTotalPages());
         assertEquals(3L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScoreById_Should_ReturnScore_When_ScoreWithIdExists() {
+        // Define variables
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(scoreId);
+
+        // Set mock expectations
+        when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.of(scoreOne));
+
+        // Execute method under test
+        Score returnedScore = scoreController.getScoreById(scoreId);
+
+        // Verify
+        assertNotNull(returnedScore);
+        assertEquals(scoreOne, returnedScore);
+
+        verify(mockScoreRepository).findById(scoreId);
+    }
+
+    @Test
+    public void getScoreById_Should_ThrowScoreNotFoundException_When_ScoreNotFound() {
+        // Define variables
+        String scoreId = "1234";
+
+        // Set mock expectations
+        when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.empty());
+
+        // Execute method under test
+        Score returnedScore = null;
+        try {
+            returnedScore = scoreController.getScoreById(scoreId);
+            fail("Expected ScoreNotFoundException");
+        } catch (ScoreNotFoundException ex) {
+            // Exception thrown as expected
+        }
+
+        // Verify
+        assertNull(returnedScore);
     }
 
     private Score getScoreOne() {

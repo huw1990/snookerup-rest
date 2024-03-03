@@ -60,7 +60,7 @@ public class UserController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public User getUserById(@PathVariable(name = "id") @NotBlank String userId) {
-        log.debug("getUser userId={}", userId);
+        log.debug("getUserById userId={}", userId);
 
         User userResponse = userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException("User not found, ID=" + userId, userId));

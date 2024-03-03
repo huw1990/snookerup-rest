@@ -2,8 +2,7 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
-import com.huwdunnit.snookeruprest.db.UserRepository;
-import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
+import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
 import com.huwdunnit.snookeruprest.model.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -63,5 +62,17 @@ public class ScoreController {
 
         log.debug("Returning score list={}", scoreListResponse);
         return scoreListResponse;
+    }
+
+    @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public Score getScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
+        log.debug("getScoreById scoreId={}", scoreId);
+
+        Score scoreResponse = scoreRepository.findById(scoreId).orElseThrow(
+                () -> new ScoreNotFoundException("Score not found, ID=" + scoreId, scoreId));
+
+        log.debug("Returning score={}", scoreResponse);
+        return scoreResponse;
     }
 }

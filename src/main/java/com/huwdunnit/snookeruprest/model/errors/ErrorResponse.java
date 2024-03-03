@@ -21,6 +21,8 @@ public class ErrorResponse {
 
     public static final String ROUTINE_NOT_FOUND = "Routine not found";
 
+    public static final String SCORE_NOT_FOUND = "Score not found";
+
     private String errorMessage;
 
     public static ErrorResponse createDuplicateValueErrorResponse() {
@@ -33,5 +35,9 @@ public class ErrorResponse {
 
     public static ErrorResponse createRoutineNotFoundErrorResponse() {
         return ErrorResponse.builder().errorMessage(ROUTINE_NOT_FOUND).build();
+    }
+
+    public static ErrorResponse createScoreNotFoundErrorResponse() {
+        return ErrorResponse.builder().errorMessage(SCORE_NOT_FOUND).build();
     }
 }

@@ -2,6 +2,7 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.BaseIT;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
+import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.Score;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -221,6 +222,33 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.pageNumber").value(pageToGet),
                         jsonPath("$.totalPages").value(expectedNumberOfPages),
                         jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
+    void getScoreById_Should_Return200ResponseWithScore_When_ScoreExists() throws Exception {
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(scoreId);
+        scoreRepository.insert(scoreOneInDb);
+
+        mockMvc.perform(get("/api/v1/scores/{score-id}", scoreId))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(scoreOneInDb.getId()),
+                        jsonPath("$.value").value(scoreOneInDb.getValue()),
+                        jsonPath("$.routineId").value(scoreOneInDb.getRoutineId()),
+                        jsonPath("$.userId").value(scoreOneInDb.getUserId()),
+                        jsonPath("$.dateAndTime").value(scoreOneInDb.getDateAndTime().format(DATE_FORMATTER)));
+    }
+
+    @Test
+    void getScoreById_Should_Return404Response_When_ScoreNotFound() throws Exception {
+        String invalidScoreId = "1234";
+
+        mockMvc.perform(get("/api/v1/scores/{score-id}", invalidScoreId))
+                .andExpect(status().isNotFound())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Score not found"));
     }
 
     private Score getScoreOne() {

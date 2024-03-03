@@ -43,7 +43,7 @@ public class RoutineController {
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Routine getRoutineById(@PathVariable(name = "id") @NotBlank String routineId) {
-        log.debug("getRoutine routineId={}", routineId);
+        log.debug("getRoutineById routineId={}", routineId);
 
         Routine routineResponse = routineRepository.findById(routineId).orElseThrow(
                 () -> new RoutineNotFoundException("Routine not found, ID=" + routineId, routineId));

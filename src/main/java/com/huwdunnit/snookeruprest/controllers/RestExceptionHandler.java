@@ -1,6 +1,7 @@
 package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
+import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
 import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
 import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,15 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("handleRoutineNotFound ex={}, request={}", ex, request);
 
         ErrorResponse errorResponse = ErrorResponse.createRoutineNotFoundErrorResponse();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler({ScoreNotFoundException.class})
+    public ResponseEntity<Object> handleScoreNotFound(ScoreNotFoundException ex, WebRequest request) {
+        log.error("handleScoreNotFound ex={}, request={}", ex, request);
+
+        ErrorResponse errorResponse = ErrorResponse.createScoreNotFoundErrorResponse();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
