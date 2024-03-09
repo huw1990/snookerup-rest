@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 @Document
 public class Score {
 
+    public static final String DATE_FORMAT = "dd/M/yyyy-HH:mm";
+
     @Id
     private String id;
 
@@ -20,6 +22,6 @@ public class Score {
 
     private String userId;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/M/yyyy HH:mm")
-    private LocalDateTime dateAndTime;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_FORMAT)
+    private LocalDateTime dateTime;
 }

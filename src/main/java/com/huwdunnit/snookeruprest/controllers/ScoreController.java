@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * REST Controller for Score endpoints.
@@ -39,9 +41,9 @@ public class ScoreController {
         String generatedUserId = IdGenerator.createNewId();
         scoreToAdd.setId(generatedUserId);
 
-        if (scoreToAdd.getDateAndTime() == null) {
+        if (scoreToAdd.getDateTime() == null) {
             log.debug("Score to add didn't have date/time set, so adding it now");
-            scoreToAdd.setDateAndTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
+            scoreToAdd.setDateTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
         }
 
         Score addedScore = scoreRepository.insert(scoreToAdd);
@@ -52,12 +54,25 @@ public class ScoreController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public ScoreListResponse getAllScores(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
-                                              @RequestParam(defaultValue = "50", name = "pageSize") int pageSize) {
-        log.debug("getAllScores pageNumber={}, pageSize={}", pageNumber, pageSize);
+    public ScoreListResponse getScores(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
+                                       @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
+                                       @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
+                                           Optional<LocalDateTime> from,
+                                       @RequestParam(name = "to") @DateTimeFormat(pattern = Score.DATE_FORMAT)
+                                           Optional<LocalDateTime> to) {
+        log.debug("getScores pageNumber={}, pageSize={} startDate={} endDate={}",
+                pageNumber, pageSize, from, to);
+
 
         Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
-        Page<Score> scoresPage = scoreRepository.findAll(pageConstraints);
+        Page<Score> scoresPage;
+        if (from.isPresent() && to.isPresent()) {
+            scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
+        } else if (from.isPresent()) {
+            scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
+        } else {
+            scoresPage = scoreRepository.findAll(pageConstraints);
+        }
         ScoreListResponse scoreListResponse = new ScoreListResponse(scoresPage);
 
         log.debug("Returning score list={}", scoreListResponse);

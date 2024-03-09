@@ -37,11 +37,11 @@ public class ScoreControllerTests {
 
     private static final String ROUTINE_ID_2 = IdGenerator.createNewId();
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/M/yyyy HH:mm");
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/M/yyyy-HH:mm");
 
-    private static final String DATE_STRING_1 = "25/2/2024 15:00";
+    private static final String DATE_STRING_1 = "25/2/2024-15:00";
 
-    private static final String DATE_STRING_2 = "01/3/2024 19:10";
+    private static final String DATE_STRING_2 = "01/3/2024-19:10";
 
     private ScoreRepository mockScoreRepository;
 
@@ -58,9 +58,9 @@ public class ScoreControllerTests {
     public void addScore_Should_AddScoreAndReturnWithId_When_DateIncludedInRequest() {
         // Define variables
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
-        scoreToAdd.setDateAndTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
         Score expectedScore = getScoreToAddWithoutDateTimeSet();
-        expectedScore.setDateAndTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        expectedScore.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
 
         // Set mock expectations
         when(mockScoreRepository.insert(any(Score.class))).thenReturn(expectedScore);
@@ -80,7 +80,7 @@ public class ScoreControllerTests {
         // Define variables
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
         Score expectedScore = getScoreToAddWithoutDateTimeSet();
-        expectedScore.setDateAndTime(LocalDateTime.now());
+        expectedScore.setDateTime(LocalDateTime.now());
 
         // Set mock expectations
         when(mockScoreRepository.insert(any(Score.class))).thenReturn(expectedScore);
@@ -96,7 +96,7 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void getAllScores_Should_RespondWithTwoScoresAndNoFurtherPages_When_OnlyTwoScoresInDb() {
+    public void getScores_Should_RespondWithTwoScoresAndNoFurtherPages_When_OnlyTwoScoresInDb() {
         // Define variables
         Score scoreOne = getScoreOne();
         scoreOne.setId(IdGenerator.createNewId());
@@ -113,7 +113,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(2L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getAllScores(0, 50);
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(2, scoresResponse.getScores().size());
@@ -126,7 +126,7 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void getAllScores_Should_RespondWithEmptyList_When_NoScoresInDb() {
+    public void getScores_Should_RespondWithEmptyList_When_NoScoresInDb() {
         // Define variables
         Page<Score> mockScoresPage = mock(Page.class);
 
@@ -139,7 +139,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(0L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getAllScores(0, 50);
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(0, scoresResponse.getScores().size());
@@ -150,7 +150,7 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void getAllScores_Should_RespondWithTwoScoresAndOneFurtherPage_When_ThreeScoresInDb() {
+    public void getScores_Should_RespondWithTwoScoresAndOneFurtherPage_When_ThreeScoresInDb() {
         // Define variables
         Score scoreOne = getScoreOne();
         scoreOne.setId(IdGenerator.createNewId());
@@ -167,7 +167,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(3L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getAllScores(0, 2);
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(2, scoresResponse.getScores().size());
@@ -177,6 +177,96 @@ public class ScoreControllerTests {
         assertEquals(2, scoresResponse.getPageSize());
         assertEquals(2, scoresResponse.getTotalPages());
         assertEquals(3L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScores_Should_RespondWithTwoScores_When_ThreeScoresInDb() {
+        // Define variables
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(IdGenerator.createNewId());
+        Score scoreTwo = getScoreTwo();
+        scoreTwo.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+
+        // Set mock expectations
+        when(mockScoreRepository.findAll(any(Pageable.class))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne, scoreTwo));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(2);
+        when(mockScoresPage.getTotalPages()).thenReturn(2);
+        when(mockScoresPage.getTotalElements()).thenReturn(3L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty());
+
+        // Verify
+        assertEquals(2, scoresResponse.getScores().size());
+        assertEquals(scoreOne, scoresResponse.getScores().get(0));
+        assertEquals(scoreTwo, scoresResponse.getScores().get(1));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(2, scoresResponse.getPageSize());
+        assertEquals(2, scoresResponse.getTotalPages());
+        assertEquals(3L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScores_Should_RespondWithOneScore_When_OnlyOneScoreInDateRangeAndRequestedScoresFromDate() {
+        // Define variables
+        Score scoreTwo = getScoreTwo();
+        scoreTwo.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+        String fromDateString = "01/3/2024-00:00";
+        LocalDateTime fromDate = LocalDateTime.parse(fromDateString, DATE_FORMATTER);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByDateTimeAfter(any(Pageable.class), eq(fromDate))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(1);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.of(fromDate), Optional.empty());
+
+        // Verify
+        assertEquals(1, scoresResponse.getScores().size());
+        assertEquals(scoreTwo, scoresResponse.getScores().get(0));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(1, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(1L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScores_Should_RespondWithOneScore_When_OnlyOneScoreInDateRangeAndRequestedScoresBetweenDates() {
+        // Define variables
+        Score scoreTwo = getScoreTwo();
+        scoreTwo.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+        String fromDateString = "01/3/2024-00:00";
+        LocalDateTime fromDate = LocalDateTime.parse(fromDateString, DATE_FORMATTER);
+        String toDateString = "02/3/2024-00:00";
+        LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByDateTimeBetween(any(Pageable.class), eq(fromDate), eq(toDate))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(1);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.of(fromDate), Optional.of(toDate));
+
+        // Verify
+        assertEquals(1, scoresResponse.getScores().size());
+        assertEquals(scoreTwo, scoresResponse.getScores().get(0));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(1, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(1L, scoresResponse.getTotalItems());
     }
 
     @Test
@@ -257,7 +347,7 @@ public class ScoreControllerTests {
         scoreToAdd.setValue(100);
         scoreToAdd.setUserId(PLAYER_ID_1);
         scoreToAdd.setRoutineId(ROUTINE_ID_1);
-        scoreToAdd.setDateAndTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
         return scoreToAdd;
     }
 
@@ -266,7 +356,7 @@ public class ScoreControllerTests {
         scoreToAdd.setValue(110);
         scoreToAdd.setUserId(PLAYER_ID_2);
         scoreToAdd.setRoutineId(ROUTINE_ID_2);
-        scoreToAdd.setDateAndTime(LocalDateTime.parse(DATE_STRING_2, DATE_FORMATTER));
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_2, DATE_FORMATTER));
         return scoreToAdd;
     }
 
