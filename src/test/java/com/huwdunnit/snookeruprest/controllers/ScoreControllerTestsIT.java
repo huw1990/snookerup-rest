@@ -105,6 +105,41 @@ public class ScoreControllerTestsIT extends BaseIT {
     }
 
     @Test
+    void getScoresForUser_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresForProvidedUser() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}",
+                        PLAYER_ID_2, pageSize, pageToGet))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreTwoInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreTwoInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreTwoInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreTwoInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
     void getScores_Should_EmptyScoresPage_When_NoScoresInDb() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;

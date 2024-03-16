@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.huwdunnit.snookeruprest.controllers.UserController.USERS_URL;
+
 /**
  * REST Controller for User endpoints.
  *
@@ -24,8 +26,10 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/users")
+@RequestMapping(USERS_URL)
 public class UserController {
+
+    public static final String USERS_URL = "/api/v1/users";
 
     private final UserRepository userRepository;
 

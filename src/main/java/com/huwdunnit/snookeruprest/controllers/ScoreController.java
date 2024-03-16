@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import static com.huwdunnit.snookeruprest.controllers.UserController.USERS_URL;
+
 /**
  * REST Controller for Score endpoints.
  *
@@ -28,8 +30,9 @@ import java.util.Optional;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/scores")
 public class ScoreController {
+
+    private static final String SCORES_URL = "/api/v1/scores";
 
     private final ScoreRepository scoreRepository;
 
@@ -52,7 +55,18 @@ public class ScoreController {
         return addedScore;
     }
 
-    @GetMapping
+    @GetMapping(USERS_URL + "/{userid}/scores")
+    @ResponseStatus(HttpStatus.OK)
+    public ScoreListResponse getScoresForUser(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
+                                       @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
+                                       @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
+                                       Optional<LocalDateTime> from,
+                                       @RequestParam(name = "to") @DateTimeFormat(pattern = Score.DATE_FORMAT)
+                                       Optional<LocalDateTime> to, @PathVariable(name = "userid") @NotBlank String userId) {
+        return getScoresCommon(pageNumber, pageSize, from, to, Optional.of(userId));
+    }
+
+    @GetMapping(SCORES_URL)
     @ResponseStatus(HttpStatus.OK)
     public ScoreListResponse getScores(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
@@ -60,20 +74,37 @@ public class ScoreController {
                                            Optional<LocalDateTime> from,
                                        @RequestParam(name = "to") @DateTimeFormat(pattern = Score.DATE_FORMAT)
                                            Optional<LocalDateTime> to) {
-        log.debug("getScores pageNumber={}, pageSize={} startDate={} endDate={}",
+        return getScoresCommon(pageNumber, pageSize, from, to, Optional.empty());
+    }
+
+    private ScoreListResponse getScoresCommon(int pageNumber, int pageSize, Optional<LocalDateTime> from, Optional<LocalDateTime> to,
+                                              Optional<String> userId) {
+                log.debug("getScores pageNumber={}, pageSize={} startDate={} endDate={}",
                 pageNumber, pageSize, from, to);
 
 
         Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
         Page<Score> scoresPage;
-        if (from.isPresent() && to.isPresent()) {
-            scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
-        } else if (from.isPresent()) {
-            scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
-        } else if (to.isPresent()) {
-            scoresPage = scoreRepository.findByDateTimeBefore(pageConstraints, to.get());
+        if (userId.isPresent()) {
+            if (from.isPresent() && to.isPresent()) {
+                scoresPage = scoreRepository.findByUserIdAndDateTimeBetween(pageConstraints, userId.get(), from.get(), to.get());
+            } else if (from.isPresent()) {
+                scoresPage = scoreRepository.findByUserIdAndDateTimeAfter(pageConstraints, userId.get(), from.get());
+            } else if (to.isPresent()) {
+                scoresPage = scoreRepository.findByUserIdAndDateTimeBefore(pageConstraints, userId.get(), to.get());
+            } else {
+                scoresPage = scoreRepository.findByUserId(pageConstraints, userId.get());
+            }
         } else {
-            scoresPage = scoreRepository.findAll(pageConstraints);
+            if (from.isPresent() && to.isPresent()) {
+                scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
+            } else if (from.isPresent()) {
+                scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
+            } else if (to.isPresent()) {
+                scoresPage = scoreRepository.findByDateTimeBefore(pageConstraints, to.get());
+            } else {
+                scoresPage = scoreRepository.findAll(pageConstraints);
+            }
         }
         ScoreListResponse scoreListResponse = new ScoreListResponse(scoresPage);
 
@@ -81,7 +112,7 @@ public class ScoreController {
         return scoreListResponse;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Score getScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
         log.debug("getScoreById scoreId={}", scoreId);
@@ -93,7 +124,7 @@ public class ScoreController {
         return scoreResponse;
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
         log.debug("deleteScoreById scoreId={}", scoreId);
