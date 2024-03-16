@@ -140,6 +140,41 @@ public class ScoreControllerTestsIT extends BaseIT {
     }
 
     @Test
+    void getScoresForUser_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresForProvidedUserAndRoutine() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&routineId={routine-id}",
+                        PLAYER_ID_2, pageSize, pageToGet, ROUTINE_ID_2))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreTwoInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreTwoInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreTwoInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreTwoInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
     void getScores_Should_EmptyScoresPage_When_NoScoresInDb() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
@@ -190,6 +225,38 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.scores[1].routineId").value(scoreTwoInDb.getRoutineId()),
                         jsonPath("$.scores[1].userId").value(scoreTwoInDb.getUserId()),
                         jsonPath("$.scores[1].dateTime").value(scoreTwoInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
+    void getScores_Should_ReturnScoresInOnePage_When_OnlyOneScoreOutOfTwoInDbMatchingRoutineId() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&routineId={routine-id}",
+                        pageSize, pageToGet, ROUTINE_ID_1))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreOneInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreOneInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreOneInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreOneInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreOneInDb.getDateTime().format(DATE_FORMATTER)))
                 .andExpectAll(
                         jsonPath("$.pageSize").value(pageSize),
                         jsonPath("$.pageNumber").value(pageToGet),

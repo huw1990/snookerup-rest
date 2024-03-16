@@ -62,8 +62,9 @@ public class ScoreController {
                                        @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
                                        Optional<LocalDateTime> from,
                                        @RequestParam(name = "to") @DateTimeFormat(pattern = Score.DATE_FORMAT)
-                                       Optional<LocalDateTime> to, @PathVariable(name = "userid") @NotBlank String userId) {
-        return getScoresCommon(pageNumber, pageSize, from, to, Optional.of(userId));
+                                       Optional<LocalDateTime> to, @PathVariable(name = "userid") @NotBlank String userId,
+                                              @RequestParam(name = "routineId") Optional<String> routineId) {
+        return getScoresCommon(pageNumber, pageSize, from, to, routineId, Optional.of(userId));
     }
 
     @GetMapping(SCORES_URL)
@@ -73,37 +74,80 @@ public class ScoreController {
                                        @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
                                            Optional<LocalDateTime> from,
                                        @RequestParam(name = "to") @DateTimeFormat(pattern = Score.DATE_FORMAT)
-                                           Optional<LocalDateTime> to) {
-        return getScoresCommon(pageNumber, pageSize, from, to, Optional.empty());
+                                           Optional<LocalDateTime> to,
+                                       @RequestParam(name = "routineId") Optional<String> routineId) {
+        return getScoresCommon(pageNumber, pageSize, from, to, routineId, Optional.empty());
     }
 
     private ScoreListResponse getScoresCommon(int pageNumber, int pageSize, Optional<LocalDateTime> from, Optional<LocalDateTime> to,
-                                              Optional<String> userId) {
-                log.debug("getScores pageNumber={}, pageSize={} startDate={} endDate={}",
-                pageNumber, pageSize, from, to);
+                                              Optional<String> routineId, Optional<String> userId) {
+                log.debug("getScores pageNumber={}, pageSize={} from={} to={} routineId={} userId={}",
+                pageNumber, pageSize, from, to, routineId, userId);
 
 
         Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
         Page<Score> scoresPage;
         if (userId.isPresent()) {
             if (from.isPresent() && to.isPresent()) {
-                scoresPage = scoreRepository.findByUserIdAndDateTimeBetween(pageConstraints, userId.get(), from.get(), to.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByUserIdAndRoutineIdAndDateTimeBetween(
+                            pageConstraints, userId.get(), routineId.get(), from.get(), to.get());
+                } else {
+                    scoresPage = scoreRepository.findByUserIdAndDateTimeBetween(
+                            pageConstraints, userId.get(), from.get(), to.get());
+                }
             } else if (from.isPresent()) {
-                scoresPage = scoreRepository.findByUserIdAndDateTimeAfter(pageConstraints, userId.get(), from.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByUserIdAndRoutineIdAndDateTimeAfter(
+                            pageConstraints, userId.get(), routineId.get(), from.get());
+                } else {
+                    scoresPage = scoreRepository.findByUserIdAndDateTimeAfter(
+                            pageConstraints, userId.get(), from.get());
+                }
             } else if (to.isPresent()) {
-                scoresPage = scoreRepository.findByUserIdAndDateTimeBefore(pageConstraints, userId.get(), to.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByUserIdAndRoutineIdAndDateTimeBefore(
+                            pageConstraints, userId.get(), routineId.get(), to.get());
+                } else {
+                    scoresPage = scoreRepository.findByUserIdAndDateTimeBefore(
+                            pageConstraints, userId.get(), to.get());
+                }
             } else {
-                scoresPage = scoreRepository.findByUserId(pageConstraints, userId.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByUserIdAndRoutineId(
+                            pageConstraints, userId.get(), routineId.get());
+                } else {
+                    scoresPage = scoreRepository.findByUserId(pageConstraints, userId.get());
+                }
             }
         } else {
             if (from.isPresent() && to.isPresent()) {
-                scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByRoutineIdAndDateTimeBetween(
+                            pageConstraints, routineId.get(), from.get(), to.get());
+                } else {
+                    scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
+                }
             } else if (from.isPresent()) {
-                scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByRoutineIdAndDateTimeAfter(
+                            pageConstraints, routineId.get(), from.get());
+                } else {
+                    scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
+                }
             } else if (to.isPresent()) {
-                scoresPage = scoreRepository.findByDateTimeBefore(pageConstraints, to.get());
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByRoutineIdAndDateTimeBefore(
+                            pageConstraints, routineId.get(), to.get());
+                } else {
+                    scoresPage = scoreRepository.findByDateTimeBefore(pageConstraints, to.get());
+                }
             } else {
-                scoresPage = scoreRepository.findAll(pageConstraints);
+                if (routineId.isPresent()) {
+                    scoresPage = scoreRepository.findByRoutineId(pageConstraints, routineId.get());
+                } else {
+                    scoresPage = scoreRepository.findAll(pageConstraints);
+                }
             }
         }
         ScoreListResponse scoreListResponse = new ScoreListResponse(scoresPage);

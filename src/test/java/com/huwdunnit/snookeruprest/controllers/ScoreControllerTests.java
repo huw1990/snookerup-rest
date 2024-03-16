@@ -113,7 +113,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(1L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScoresForUser(0, 50, Optional.empty(), Optional.empty(), PLAYER_ID_2);
+        ScoreListResponse scoresResponse = scoreController.getScoresForUser(0, 50, Optional.empty(), Optional.empty(), PLAYER_ID_2, Optional.empty());
 
         // Verify
         assertEquals(1, scoresResponse.getScores().size());
@@ -122,6 +122,59 @@ public class ScoreControllerTests {
         assertEquals(1, scoresResponse.getPageSize());
         assertEquals(1, scoresResponse.getTotalPages());
         assertEquals(1L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScoresForUser_Should_RespondWithOneScore_When_RoutineIdProvidedAndOnlyOneMatchingScore() {
+        // Define variables
+        Score scoreTwo = getScoreTwo();
+        scoreTwo.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+        String toDateString = "27/2/2024-00:00";
+        LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByUserIdAndRoutineId(any(Pageable.class), eq(PLAYER_ID_2), eq(ROUTINE_ID_2))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(1);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScoresForUser(0, 50, Optional.empty(), Optional.empty(), PLAYER_ID_2, Optional.of(ROUTINE_ID_2));
+
+        // Verify
+        assertEquals(1, scoresResponse.getScores().size());
+        assertEquals(scoreTwo, scoresResponse.getScores().get(0));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(1, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(1L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScoresForUser_Should_RespondWithNoScores_When_RoutineIdProvidedAndNoMatchingScores() {
+        // Define variables
+        Page<Score> mockScoresPage = mock(Page.class);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByUserIdAndRoutineId(any(Pageable.class), eq(PLAYER_ID_2), eq(ROUTINE_ID_1))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of());
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(0);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(0L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScoresForUser(0, 50, Optional.empty(), Optional.empty(), PLAYER_ID_2, Optional.of(ROUTINE_ID_1));
+
+        // Verify
+        assertEquals(0, scoresResponse.getScores().size());
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(0, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(0L, scoresResponse.getTotalItems());
     }
 
     @Test
@@ -142,7 +195,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(2L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty());
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(2, scoresResponse.getScores().size());
@@ -152,6 +205,33 @@ public class ScoreControllerTests {
         assertEquals(2, scoresResponse.getPageSize());
         assertEquals(1, scoresResponse.getTotalPages());
         assertEquals(2L, scoresResponse.getTotalItems());
+    }
+
+    @Test
+    public void getScores_Should_RespondWithOneScoreAndNoFurtherPages_When_OnlyTwoScoresInDbButOneMatchingProvidedRoutineId() {
+        // Define variables
+        Score scoreTwo = getScoreTwo();
+        scoreTwo.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByRoutineId(any(Pageable.class), eq(ROUTINE_ID_2))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(1);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty(), Optional.of(ROUTINE_ID_2));
+
+        // Verify
+        assertEquals(1, scoresResponse.getScores().size());
+        assertEquals(scoreTwo, scoresResponse.getScores().get(0));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(1, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(1L, scoresResponse.getTotalItems());
     }
 
     @Test
@@ -168,7 +248,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(0L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty());
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.empty(), Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(0, scoresResponse.getScores().size());
@@ -196,7 +276,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(3L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty());
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(2, scoresResponse.getScores().size());
@@ -226,7 +306,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(3L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty());
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(2, scoresResponse.getScores().size());
@@ -256,7 +336,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(1L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.of(toDate));
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.of(toDate), Optional.empty());
 
         // Verify
         assertEquals(1, scoresResponse.getScores().size());
@@ -285,7 +365,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(1L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.of(fromDate), Optional.empty());
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.of(fromDate), Optional.empty(), Optional.empty());
 
         // Verify
         assertEquals(1, scoresResponse.getScores().size());
@@ -316,7 +396,7 @@ public class ScoreControllerTests {
         when(mockScoresPage.getTotalElements()).thenReturn(1L);
 
         // Execute method under test
-        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.of(fromDate), Optional.of(toDate));
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 50, Optional.of(fromDate), Optional.of(toDate), Optional.empty());
 
         // Verify
         assertEquals(1, scoresResponse.getScores().size());
