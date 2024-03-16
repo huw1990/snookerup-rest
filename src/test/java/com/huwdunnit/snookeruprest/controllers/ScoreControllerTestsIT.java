@@ -163,6 +163,41 @@ public class ScoreControllerTestsIT extends BaseIT {
     }
 
     @Test
+    void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateBeforeTo() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&to=27/2/2024-00:00",
+                        pageSize, pageToGet))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreOneInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreOneInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreOneInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreOneInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreOneInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
     void getScores_Should_ReturnJustTwoScores_When_OnlyTwoOutOfThreeDbScoresWithDateAfterFrom() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();

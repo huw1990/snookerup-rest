@@ -210,6 +210,35 @@ public class ScoreControllerTests {
     }
 
     @Test
+    public void getScores_Should_RespondWithOneScore_When_OnlyOneScoreInDateRangeAndRequestedScoresToDate() {
+        // Define variables
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(IdGenerator.createNewId());
+        Page<Score> mockScoresPage = mock(Page.class);
+        String toDateString = "27/2/2024-00:00";
+        LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByDateTimeBefore(any(Pageable.class), eq(toDate))).thenReturn(mockScoresPage);
+        when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne));
+        when(mockScoresPage.getNumber()).thenReturn(0);
+        when(mockScoresPage.getSize()).thenReturn(1);
+        when(mockScoresPage.getTotalPages()).thenReturn(1);
+        when(mockScoresPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        ScoreListResponse scoresResponse = scoreController.getScores(0, 2, Optional.empty(), Optional.of(toDate));
+
+        // Verify
+        assertEquals(1, scoresResponse.getScores().size());
+        assertEquals(scoreOne, scoresResponse.getScores().get(0));
+        assertEquals(0, scoresResponse.getPageNumber());
+        assertEquals(1, scoresResponse.getPageSize());
+        assertEquals(1, scoresResponse.getTotalPages());
+        assertEquals(1L, scoresResponse.getTotalItems());
+    }
+
+    @Test
     public void getScores_Should_RespondWithOneScore_When_OnlyOneScoreInDateRangeAndRequestedScoresFromDate() {
         // Define variables
         Score scoreTwo = getScoreTwo();

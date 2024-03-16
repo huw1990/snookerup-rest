@@ -70,6 +70,8 @@ public class ScoreController {
             scoresPage = scoreRepository.findByDateTimeBetween(pageConstraints, from.get(), to.get());
         } else if (from.isPresent()) {
             scoresPage = scoreRepository.findByDateTimeAfter(pageConstraints, from.get());
+        } else if (to.isPresent()) {
+            scoresPage = scoreRepository.findByDateTimeBefore(pageConstraints, to.get());
         } else {
             scoresPage = scoreRepository.findAll(pageConstraints);
         }

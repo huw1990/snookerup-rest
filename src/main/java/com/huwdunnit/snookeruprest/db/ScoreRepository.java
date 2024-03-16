@@ -32,4 +32,12 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @return All scores after the provided date
      */
     Page<Score> findByDateTimeAfter(Pageable pageConstraints, LocalDateTime from);
+
+    /**
+     * Get all scores where the date is before the "to" date.
+     * @param pageConstraints Constraints for paging
+     * @param to To date
+     * @return All scores before the provided date
+     */
+    Page<Score> findByDateTimeBefore(Pageable pageConstraints, LocalDateTime to);
 }
