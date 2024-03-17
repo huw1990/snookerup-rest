@@ -42,6 +42,14 @@ public class RoutineControllerTests {
             
             Can you clear the table?""";
 
+    private static final String CLEARING_COLOURS_TITLE = "Clearing the Colours";
+    private static final String CLEARING_COLOURS_DESC = """
+            Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.""";
+    private static final String TAG_BEGINNER = "beginner";
+    private static final String TAG_INTER = "intermediate";
+    private static final String TAG_BREAK_BUILDING = "break-building";
+    private static final String TAG_POSITION = "positional-play";
+
     private RoutineRepository mockRoutineRepository;
 
     private RoutineController routineController;
@@ -74,7 +82,7 @@ public class RoutineControllerTests {
     }
 
     @Test
-    public void getAllRoutines_Should_RespondWithTwoRoutinesAndNoFurtherPages_When_OnlyTwoRoutinesInDb() {
+    public void getRoutines_Should_RespondWithTwoRoutinesAndNoFurtherPages_When_OnlyTwoRoutinesInDb() {
         // Define variables
         Routine lineUpRoutine = getLineUpRoutine();
         lineUpRoutine.setId(IdGenerator.createNewId());
@@ -91,7 +99,7 @@ public class RoutineControllerTests {
         when(mockRoutinesPage.getTotalElements()).thenReturn(2L);
 
         // Execute method under test
-        RoutineListResponse routinesResponse = routineController.getAllRoutines(0, 50);
+        RoutineListResponse routinesResponse = routineController.getRoutines(0, 50, Optional.empty());
 
         // Verify
         assertEquals(2, routinesResponse.getRoutines().size());
@@ -104,7 +112,7 @@ public class RoutineControllerTests {
     }
 
     @Test
-    public void getAllRoutines_Should_RespondWithEmptyList_When_NoRoutinesInDb() {
+    public void getRoutines_Should_RespondWithEmptyList_When_NoRoutinesInDb() {
         // Define variables
         Page<Routine> mockRoutinesPage = mock(Page.class);
 
@@ -117,7 +125,7 @@ public class RoutineControllerTests {
         when(mockRoutinesPage.getTotalElements()).thenReturn(0L);
 
         // Execute method under test
-        RoutineListResponse routinesResponse = routineController.getAllRoutines(0, 50);
+        RoutineListResponse routinesResponse = routineController.getRoutines(0, 50, Optional.empty());
 
         // Verify
         assertEquals(0, routinesResponse.getRoutines().size());
@@ -128,7 +136,7 @@ public class RoutineControllerTests {
     }
 
     @Test
-    public void getAllRoutines_Should_RespondWithTwoRoutinesAndOneFurtherPage_When_ThreeRoutinesInDb() {
+    public void getRoutines_Should_RespondWithTwoRoutinesAndOneFurtherPage_When_ThreeRoutinesInDb() {
         // Define variables
         Routine lineUpRoutine = getLineUpRoutine();
         lineUpRoutine.setId(IdGenerator.createNewId());
@@ -145,7 +153,7 @@ public class RoutineControllerTests {
         when(mockRoutinesPage.getTotalElements()).thenReturn(3L);
 
         // Execute method under test
-        RoutineListResponse routinesResponse = routineController.getAllRoutines(0, 2);
+        RoutineListResponse routinesResponse = routineController.getRoutines(0, 2, Optional.empty());
 
         // Verify
         assertEquals(2, routinesResponse.getRoutines().size());
@@ -155,6 +163,34 @@ public class RoutineControllerTests {
         assertEquals(2, routinesResponse.getPageSize());
         assertEquals(2, routinesResponse.getTotalPages());
         assertEquals(3L, routinesResponse.getTotalItems());
+    }
+
+    @Test
+    public void getRoutines_Should_RespondWithOneRoutine_When_OnlyOneRoutineContainsRequestedTags() {
+        // Define variables
+        Routine clearingColoursRoutine = getClearingTheColoursRoutine();
+        clearingColoursRoutine.setId(IdGenerator.createNewId());
+        Page<Routine> mockRoutinesPage = mock(Page.class);
+        List<String> tagList = List.of(TAG_BEGINNER);
+
+        // Set mock expectations
+        when(mockRoutineRepository.findByTagsIn(any(Pageable.class), eq(tagList))).thenReturn(mockRoutinesPage);
+        when(mockRoutinesPage.getContent()).thenReturn(List.of(clearingColoursRoutine));
+        when(mockRoutinesPage.getNumber()).thenReturn(0);
+        when(mockRoutinesPage.getSize()).thenReturn(1);
+        when(mockRoutinesPage.getTotalPages()).thenReturn(1);
+        when(mockRoutinesPage.getTotalElements()).thenReturn(1L);
+
+        // Execute method under test
+        RoutineListResponse routinesResponse = routineController.getRoutines(0, 50, Optional.of(tagList));
+
+        // Verify
+        assertEquals(1, routinesResponse.getRoutines().size());
+        assertEquals(clearingColoursRoutine, routinesResponse.getRoutines().get(0));
+        assertEquals(0, routinesResponse.getPageNumber());
+        assertEquals(1, routinesResponse.getPageSize());
+        assertEquals(1, routinesResponse.getTotalPages());
+        assertEquals(1L, routinesResponse.getTotalItems());
     }
 
     @Test
@@ -199,17 +235,22 @@ public class RoutineControllerTests {
     }
 
     private Routine getLineUpRoutine() {
-        return createRoutine(LINEUP_TITLE, LINEUP_DESC);
+        return createRoutine(LINEUP_TITLE, LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
     }
 
     private Routine getTLineUpRoutine() {
-        return createRoutine(T_LINEUP_TITLE, T_LINEUP_DESC);
+        return createRoutine(T_LINEUP_TITLE, T_LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
     }
 
-    private Routine createRoutine(String title, String description) {
+    private Routine getClearingTheColoursRoutine() {
+        return createRoutine(CLEARING_COLOURS_TITLE, CLEARING_COLOURS_DESC, List.of(TAG_BEGINNER, TAG_POSITION));
+    }
+
+    private Routine createRoutine(String title, String description, List<String> tags) {
         Routine routine = new Routine();
         routine.setTitle(title);
         routine.setDescription(description);
+        routine.setTags(tags);
         return routine;
     }
 }

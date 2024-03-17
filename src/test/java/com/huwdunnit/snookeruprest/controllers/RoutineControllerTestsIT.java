@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,6 +49,10 @@ public class RoutineControllerTestsIT extends BaseIT {
     private static final String CLEARING_COLOURS_TITLE = "Clearing the Colours";
     private static final String CLEARING_COLOURS_DESC = """
             Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.""";
+    private static final String TAG_BEGINNER = "beginner";
+    private static final String TAG_INTER = "intermediate";
+    private static final String TAG_BREAK_BUILDING = "break-building";
+    private static final String TAG_POSITION = "positional-play";
 
     @Test
     void addRoutine_Should_Return201ResponseWithAddedRoutine() throws Exception {
@@ -61,7 +66,11 @@ public class RoutineControllerTestsIT extends BaseIT {
                 .andExpectAll(
                         jsonPath("$.id").exists(),
                         jsonPath("$.title").value(routineToAdd.getTitle()),
-                        jsonPath("$.description").value(routineToAdd.getDescription()))
+                        jsonPath("$.description").value(routineToAdd.getDescription()),
+                        jsonPath("$.tags.length()").value(3),
+                        jsonPath("$.tags[0]").value(routineToAdd.getTags().get(0)),
+                        jsonPath("$.tags[1]").value(routineToAdd.getTags().get(1)),
+                        jsonPath("$.tags[2]").value(routineToAdd.getTags().get(2)))
                 .andReturn();
 
         // Get the routine's ID so we can check it exists in the DB
@@ -78,7 +87,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getAllRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDb() throws Exception {
+    void getRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDb() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
         int expectedNumberOfPages = 0;
@@ -98,7 +107,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getAllRoutines_Should_RoutinesInOnePage_When_OnlyTwoRoutinesInDb() throws Exception {
+    void getRoutines_Should_RoutinesInOnePage_When_OnlyTwoRoutinesInDb() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -119,11 +128,19 @@ public class RoutineControllerTestsIT extends BaseIT {
                 .andExpectAll(
                         jsonPath("$.routines[0].id").value(lineUpInDb.getId()),
                         jsonPath("$.routines[0].title").value(lineUpInDb.getTitle()),
-                        jsonPath("$.routines[0].description").value(lineUpInDb.getDescription()))
+                        jsonPath("$.routines[0].description").value(lineUpInDb.getDescription()),
+                        jsonPath("$.routines[0].tags.length()").value(3),
+                        jsonPath("$.routines[0].tags[0]").value(lineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[0].tags[1]").value(lineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[0].tags[2]").value(lineUpInDb.getTags().get(2)))
                 .andExpectAll(
                         jsonPath("$.routines[1].id").value(tLineUpInDb.getId()),
                         jsonPath("$.routines[1].title").value(tLineUpInDb.getTitle()),
-                        jsonPath("$.routines[1].description").value(tLineUpInDb.getDescription()))
+                        jsonPath("$.routines[1].description").value(tLineUpInDb.getDescription()),
+                        jsonPath("$.routines[1].tags.length()").value(3),
+                        jsonPath("$.routines[1].tags[0]").value(tLineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[1].tags[1]").value(tLineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[1].tags[2]").value(tLineUpInDb.getTags().get(2)))
                 .andExpectAll(
                         jsonPath("$.pageSize").value(pageSize),
                         jsonPath("$.pageNumber").value(pageToGet),
@@ -132,7 +149,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getAllRoutines_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
+    void getRoutines_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -156,11 +173,19 @@ public class RoutineControllerTestsIT extends BaseIT {
                 .andExpectAll(
                         jsonPath("$.routines[0].id").value(lineUpInDb.getId()),
                         jsonPath("$.routines[0].title").value(lineUpInDb.getTitle()),
-                        jsonPath("$.routines[0].description").value(lineUpInDb.getDescription()))
+                        jsonPath("$.routines[0].description").value(lineUpInDb.getDescription()),
+                        jsonPath("$.routines[0].tags.length()").value(3),
+                        jsonPath("$.routines[0].tags[0]").value(lineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[0].tags[1]").value(lineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[0].tags[2]").value(lineUpInDb.getTags().get(2)))
                 .andExpectAll(
                         jsonPath("$.routines[1].id").value(tLineUpInDb.getId()),
                         jsonPath("$.routines[1].title").value(tLineUpInDb.getTitle()),
-                        jsonPath("$.routines[1].description").value(tLineUpInDb.getDescription()))
+                        jsonPath("$.routines[1].description").value(tLineUpInDb.getDescription()),
+                        jsonPath("$.routines[1].tags.length()").value(3),
+                        jsonPath("$.routines[1].tags[0]").value(tLineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[1].tags[1]").value(tLineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[1].tags[2]").value(tLineUpInDb.getTags().get(2)))
                 .andExpectAll(
                         jsonPath("$.pageSize").value(pageSize),
                         jsonPath("$.pageNumber").value(pageToGet),
@@ -176,7 +201,98 @@ public class RoutineControllerTestsIT extends BaseIT {
                 .andExpectAll(
                         jsonPath("$.routines[0].id").value(clearingColoursInDb.getId()),
                         jsonPath("$.routines[0].title").value(clearingColoursInDb.getTitle()),
-                        jsonPath("$.routines[0].description").value(clearingColoursInDb.getDescription()))
+                        jsonPath("$.routines[0].description").value(clearingColoursInDb.getDescription()),
+                        jsonPath("$.routines[0].tags.length()").value(2),
+                        jsonPath("$.routines[0].tags[0]").value(clearingColoursInDb.getTags().get(0)),
+                        jsonPath("$.routines[0].tags[1]").value(clearingColoursInDb.getTags().get(1)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
+    void getRoutines_Should_ReturnOneRoutine_When_OnlyOneRoutineWithRequestedTag() throws Exception {
+        // Add routines to DB before running test
+        Routine lineUpInDb = getLineUpRoutine();
+        lineUpInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(lineUpInDb);
+        Routine tLineUpInDb = getTLineUpRoutine();
+        tLineUpInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(tLineUpInDb);
+        Routine clearingColoursInDb = getClearingTheColoursRoutine();
+        clearingColoursInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(clearingColoursInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of routines
+        mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}&tags=beginner",
+                        pageSize, pageToGet))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.routines[0].id").value(clearingColoursInDb.getId()),
+                        jsonPath("$.routines[0].title").value(clearingColoursInDb.getTitle()),
+                        jsonPath("$.routines[0].description").value(clearingColoursInDb.getDescription()),
+                        jsonPath("$.routines[0].tags.length()").value(2),
+                        jsonPath("$.routines[0].tags[0]").value(clearingColoursInDb.getTags().get(0)),
+                        jsonPath("$.routines[0].tags[1]").value(clearingColoursInDb.getTags().get(1)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @Test
+    void getRoutines_Should_ReturnThreeRoutines_When_MultipleTagsRequested() throws Exception {
+        // Add routines to DB before running test
+        Routine lineUpInDb = getLineUpRoutine();
+        lineUpInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(lineUpInDb);
+        Routine tLineUpInDb = getTLineUpRoutine();
+        tLineUpInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(tLineUpInDb);
+        Routine clearingColoursInDb = getClearingTheColoursRoutine();
+        clearingColoursInDb.setId(IdGenerator.createNewId());
+        routineRepository.insert(clearingColoursInDb);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 3;
+
+        // Get the first page of routines
+        mockMvc.perform(get("/api/v1/routines?pageSize={page-size}&pageNumber={page-number}&tags=beginner,intermediate",
+                        pageSize, pageToGet))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.routines[0].id").value(lineUpInDb.getId()),
+                        jsonPath("$.routines[0].title").value(lineUpInDb.getTitle()),
+                        jsonPath("$.routines[0].description").value(lineUpInDb.getDescription()),
+                        jsonPath("$.routines[0].tags.length()").value(3),
+                        jsonPath("$.routines[0].tags[0]").value(lineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[0].tags[1]").value(lineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[0].tags[2]").value(lineUpInDb.getTags().get(2)))
+                .andExpectAll(
+                        jsonPath("$.routines[1].id").value(tLineUpInDb.getId()),
+                        jsonPath("$.routines[1].title").value(tLineUpInDb.getTitle()),
+                        jsonPath("$.routines[1].description").value(tLineUpInDb.getDescription()),
+                        jsonPath("$.routines[1].tags.length()").value(3),
+                        jsonPath("$.routines[1].tags[0]").value(tLineUpInDb.getTags().get(0)),
+                        jsonPath("$.routines[1].tags[1]").value(tLineUpInDb.getTags().get(1)),
+                        jsonPath("$.routines[1].tags[2]").value(tLineUpInDb.getTags().get(2)))
+                .andExpectAll(
+                        jsonPath("$.routines[2].id").value(clearingColoursInDb.getId()),
+                        jsonPath("$.routines[2].title").value(clearingColoursInDb.getTitle()),
+                        jsonPath("$.routines[2].description").value(clearingColoursInDb.getDescription()),
+                        jsonPath("$.routines[2].tags.length()").value(2),
+                        jsonPath("$.routines[2].tags[0]").value(clearingColoursInDb.getTags().get(0)),
+                        jsonPath("$.routines[2].tags[1]").value(clearingColoursInDb.getTags().get(1)))
                 .andExpectAll(
                         jsonPath("$.pageSize").value(pageSize),
                         jsonPath("$.pageNumber").value(pageToGet),
@@ -196,7 +312,11 @@ public class RoutineControllerTestsIT extends BaseIT {
                 .andExpectAll(
                         jsonPath("$.id").value(lineUpInDb.getId()),
                         jsonPath("$.title").value(lineUpInDb.getTitle()),
-                        jsonPath("$.description").value(lineUpInDb.getDescription()));
+                        jsonPath("$.description").value(lineUpInDb.getDescription()),
+                        jsonPath("$.tags.length()").value(3),
+                        jsonPath("$.tags[0]").value(lineUpInDb.getTags().get(0)),
+                        jsonPath("$.tags[1]").value(lineUpInDb.getTags().get(1)),
+                        jsonPath("$.tags[2]").value(lineUpInDb.getTags().get(2)));
     }
 
     @Test
@@ -210,21 +330,22 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     private Routine getLineUpRoutine() {
-        return createRoutine(LINEUP_TITLE, LINEUP_DESC);
+        return createRoutine(LINEUP_TITLE, LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
     }
 
     private Routine getTLineUpRoutine() {
-        return createRoutine(T_LINEUP_TITLE, T_LINEUP_DESC);
+        return createRoutine(T_LINEUP_TITLE, T_LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
     }
 
     private Routine getClearingTheColoursRoutine() {
-        return createRoutine(CLEARING_COLOURS_TITLE, CLEARING_COLOURS_DESC);
+        return createRoutine(CLEARING_COLOURS_TITLE, CLEARING_COLOURS_DESC, List.of(TAG_BEGINNER, TAG_POSITION));
     }
 
-    private Routine createRoutine(String title, String description) {
+    private Routine createRoutine(String title, String description, List<String> tags) {
         Routine routine = new Routine();
         routine.setTitle(title);
         routine.setDescription(description);
+        routine.setTags(tags);
         return routine;
     }
 }

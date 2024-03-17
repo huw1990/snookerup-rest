@@ -14,6 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 /**
  * REST Controller for Routine endpoints.
  *
@@ -43,12 +47,18 @@ public class RoutineController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public RoutineListResponse getAllRoutines(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
-                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize) {
-        log.debug("getAllRoutines pageNumber={}, pageSize={}", pageNumber, pageSize);
+    public RoutineListResponse getRoutines(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
+                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
+                                              @RequestParam(name = "tags") Optional<List<String>> tags) {
+        log.debug("getRoutines pageNumber={}, pageSize={} tags={}", pageNumber, pageSize, tags);
 
         Pageable pageConstraints = PageRequest.of(pageNumber, pageSize);
-        Page<Routine> routinesPage = routineRepository.findAll(pageConstraints);
+        Page<Routine> routinesPage;
+        if (tags.isPresent()) {
+            routinesPage = routineRepository.findByTagsIn(pageConstraints, tags.get());
+        } else {
+            routinesPage = routineRepository.findAll(pageConstraints);
+        }
         RoutineListResponse routineListResponse = new RoutineListResponse(routinesPage);
 
         log.debug("Returning routine list={}", routineListResponse);
