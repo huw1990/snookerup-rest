@@ -1,5 +1,6 @@
 package com.huwdunnit.snookeruprest.controllers;
 
+import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
 import com.huwdunnit.snookeruprest.model.Routine;
@@ -25,6 +26,20 @@ import org.springframework.web.bind.annotation.*;
 public class RoutineController {
 
     private final RoutineRepository routineRepository;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Routine addRoutine(@RequestBody Routine routineToAdd) {
+        log.debug("addRoutine routine={}", routineToAdd);
+
+        String generatedUserId = IdGenerator.createNewId();
+        routineToAdd.setId(generatedUserId);
+
+        Routine addedRoutine = routineRepository.insert(routineToAdd);
+
+        log.debug("Returning new routine {}", addedRoutine);
+        return addedRoutine;
+    }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)

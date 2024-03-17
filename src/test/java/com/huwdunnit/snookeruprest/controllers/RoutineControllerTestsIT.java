@@ -5,9 +5,16 @@ import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.Routine;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,6 +48,34 @@ public class RoutineControllerTestsIT extends BaseIT {
     private static final String CLEARING_COLOURS_TITLE = "Clearing the Colours";
     private static final String CLEARING_COLOURS_DESC = """
             Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.""";
+
+    @Test
+    void addRoutine_Should_Return201ResponseWithAddedRoutine() throws Exception {
+        Routine routineToAdd = getLineUpRoutine();
+        String requestBody = objectMapper.writeValueAsString(routineToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/routines")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.id").exists(),
+                        jsonPath("$.title").value(routineToAdd.getTitle()),
+                        jsonPath("$.description").value(routineToAdd.getDescription()))
+                .andReturn();
+
+        // Get the routine's ID so we can check it exists in the DB
+        Routine routineInResponse = objectMapper.readValue(result.getResponse().getContentAsString(), Routine.class);
+        String addedRoutineId = routineInResponse.getId();
+
+        // Get the routine by ID from the DB.
+        Optional<Routine> opt = routineRepository.findById(addedRoutineId);
+
+        opt.ifPresentOrElse(
+                (scoreInDb) -> assertEquals(routineInResponse, scoreInDb, "Routine returned in response is different to routine in DB"),
+                () -> fail("Routine with ID from response not found in the DB")
+        );
+    }
 
     @Test
     void getAllRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDb() throws Exception {

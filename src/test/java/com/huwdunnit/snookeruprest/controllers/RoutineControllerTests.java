@@ -54,6 +54,26 @@ public class RoutineControllerTests {
     }
 
     @Test
+    public void addRoutine_Should_AddRoutineAndReturnWithId() {
+        // Define variables
+        Routine routineToAdd = getLineUpRoutine();
+        Routine expectedRoutine = getLineUpRoutine();
+        expectedRoutine.setId(IdGenerator.createNewId());
+
+        // Set mock expectations
+        when(mockRoutineRepository.insert(any(Routine.class))).thenReturn(expectedRoutine);
+
+        // Execute method under test
+        Routine addedRoutine = routineController.addRoutine(routineToAdd);
+
+        // Verify
+        assertNotNull(addedRoutine);
+        assertEquals(expectedRoutine, addedRoutine);
+
+        verify(mockRoutineRepository).insert(any(Routine.class));
+    }
+
+    @Test
     public void getAllRoutines_Should_RespondWithTwoRoutinesAndNoFurtherPages_When_OnlyTwoRoutinesInDb() {
         // Define variables
         Routine lineUpRoutine = getLineUpRoutine();
