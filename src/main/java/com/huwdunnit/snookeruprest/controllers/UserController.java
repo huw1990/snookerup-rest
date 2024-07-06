@@ -38,6 +38,9 @@ public class UserController {
     public User addUser(@RequestBody User userToAdd) {
         log.debug("addUser user={}", userToAdd);
 
+        // Don't allow users to create themselves as admin users
+        userToAdd.setAdmin(false);
+
         String generatedUserId = IdGenerator.createNewId();
         userToAdd.setId(generatedUserId);
 

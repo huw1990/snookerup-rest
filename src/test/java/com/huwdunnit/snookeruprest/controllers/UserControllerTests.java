@@ -6,6 +6,7 @@ import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.model.UserListResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,6 +71,36 @@ public class UserControllerTests {
         assertEquals(expectedUser, addedUser);
 
         verify(mockUserRepository).insert(any(User.class));
+    }
+
+    @Test
+    public void addUser_Should_AddUserAndReturnWithIdWithoutAdminSet_When_AdminSetToTrueOnReq() {
+        // Define variables
+        User userToAdd = new User();
+        userToAdd.setEmail(RONNIE_EMAIL);
+        userToAdd.setFirstName(RONNIE_FIRST_NAME);
+        userToAdd.setLastName(RONNIE_LAST_NAME);
+        userToAdd.setAdmin(true);
+        User expectedUser = new User();
+        expectedUser.setEmail(RONNIE_EMAIL);
+        expectedUser.setFirstName(RONNIE_FIRST_NAME);
+        expectedUser.setLastName(RONNIE_LAST_NAME);
+        expectedUser.setId("1234");
+
+        // Set mock expectations
+        when(mockUserRepository.insert(any(User.class))).thenReturn(expectedUser);
+
+        // Execute method under test
+        User addedUser = userController.addUser(userToAdd);
+
+        // Verify
+        assertNotNull(addedUser);
+        assertEquals(expectedUser, addedUser);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(mockUserRepository).insert(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+        assertFalse(capturedUser.isAdmin());
     }
 
     @Test
