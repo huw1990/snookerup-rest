@@ -5,6 +5,8 @@ import com.huwdunnit.snookeruprest.db.UserRepository;
 import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.model.UserListResponse;
+import com.huwdunnit.snookeruprest.security.permissions.AdminPermission;
+import com.huwdunnit.snookeruprest.security.permissions.UserOwnerOrAdminPermission;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static com.huwdunnit.snookeruprest.controllers.UserController.USERS_URL;
 
@@ -49,6 +49,7 @@ public class UserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
+    @AdminPermission
     public UserListResponse getAllUsers(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
                                         @RequestParam(defaultValue = "50", name = "pageSize") int pageSize) {
         log.debug("getAllUsers pageNumber={}, pageSize={}", pageNumber, pageSize);
@@ -63,6 +64,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
+    @UserOwnerOrAdminPermission
     public User getUserById(@PathVariable(name = "id") @NotBlank String userId) {
         log.debug("getUserById userId={}", userId);
 

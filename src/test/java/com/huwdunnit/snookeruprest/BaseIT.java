@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.db.UserRepository;
+import com.huwdunnit.snookeruprest.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
@@ -30,6 +32,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Testcontainers
 @DirtiesContext
 public abstract class BaseIT {
+
+    private static final String RONNIE_EMAIL = "ronnieo@example.com";
+    private static final String RONNIE_FIRST_NAME = "Ronnie";
+
+    private static final String RONNIE_LAST_NAME = "O'Sullivan";
+
+    private static final String HENDRY_EMAIL = "hendry@example.com";
+    private static final String HENDRY_FIRST_NAME = "Stephen";
+
+    private static final String HENDRY_LAST_NAME = "Hendry";
+
+    private static final String WILLO_EMAIL = "willo@example.com";
+    private static final String WILLO_FIRST_NAME = "Mark";
+
+    private static final String WILLO_LAST_NAME = "Williams";
 
     @Container
     protected static GenericContainer<?> MONGODB_CONTAINER = new GenericContainer<>(DockerImageName.parse("mongo"))
@@ -66,6 +83,7 @@ public abstract class BaseIT {
     public void setup() {
         mockMvc = MockMvcBuilders
                 .webAppContextSetup(wac)
+                .apply(springSecurity())
                 .build();
     }
 
@@ -74,5 +92,25 @@ public abstract class BaseIT {
         userRepository.deleteAll();
         routineRepository.deleteAll();
         scoreRepository.deleteAll();
+    }
+
+    protected User getRonnieUser() {
+        return createUser(RONNIE_FIRST_NAME, RONNIE_LAST_NAME, RONNIE_EMAIL);
+    }
+
+    protected User getHendryUser() {
+        return createUser(HENDRY_FIRST_NAME, HENDRY_LAST_NAME, HENDRY_EMAIL);
+    }
+
+    protected User getWilloUser() {
+        return createUser(WILLO_FIRST_NAME, WILLO_LAST_NAME, WILLO_EMAIL);
+    }
+
+    private User createUser(String firstName, String lastName, String email) {
+        User user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        return user;
     }
 }

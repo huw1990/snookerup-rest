@@ -5,6 +5,7 @@ import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
 import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.RoutineListResponse;
+import com.huwdunnit.snookeruprest.security.permissions.AdminPermission;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * REST Controller for Routine endpoints.
@@ -33,6 +33,7 @@ public class RoutineController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @AdminPermission
     public Routine addRoutine(@RequestBody Routine routineToAdd) {
         log.debug("addRoutine routine={}", routineToAdd);
 

@@ -3,9 +3,12 @@ package com.huwdunnit.snookeruprest.controllers;
 import com.huwdunnit.snookeruprest.BaseIT;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.Score;
+import com.huwdunnit.snookeruprest.model.User;
+import com.huwdunnit.snookeruprest.security.Roles;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -14,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,13 +49,16 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @Test
     void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReq() throws Exception {
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
         scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
         String requestBody = objectMapper.writeValueAsString(scoreToAdd);
 
         MvcResult result = mockMvc.perform(post("/api/v1/scores")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(requestBody)
+                        .with(user(userForScore)))
                 .andExpect(status().isCreated())
                 .andExpectAll(
                         jsonPath("$.id").exists(),
@@ -76,12 +83,15 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @Test
     void addScore_Should_Return201ResponseWithAddedScore_When_DateNotIncludedInReq() throws Exception {
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
         String requestBody = objectMapper.writeValueAsString(scoreToAdd);
 
         MvcResult result = mockMvc.perform(post("/api/v1/scores")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+                        .content(requestBody)
+                        .with(user(userForScore)))
                 .andExpect(status().isCreated())
                 .andExpectAll(
                         jsonPath("$.id").exists(),
@@ -116,6 +126,9 @@ public class ScoreControllerTestsIT extends BaseIT {
         Score scoreThreeInDb = getScoreThree();
         scoreThreeInDb.setId(IdGenerator.createNewId());
         scoreRepository.insert(scoreThreeInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
 
         int pageSize = 50;
         int pageToGet = 0;
@@ -124,7 +137,8 @@ public class ScoreControllerTestsIT extends BaseIT {
 
         // Get the first page of scores
         mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}",
-                        PLAYER_ID_2, pageSize, pageToGet))
+                        PLAYER_ID_2, pageSize, pageToGet)
+                        .with(user(hendryUser)))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
@@ -151,6 +165,9 @@ public class ScoreControllerTestsIT extends BaseIT {
         Score scoreThreeInDb = getScoreThree();
         scoreThreeInDb.setId(IdGenerator.createNewId());
         scoreRepository.insert(scoreThreeInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
 
         int pageSize = 50;
         int pageToGet = 0;
@@ -159,7 +176,8 @@ public class ScoreControllerTestsIT extends BaseIT {
 
         // Get the first page of scores
         mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&routineId={routine-id}",
-                        PLAYER_ID_2, pageSize, pageToGet, ROUTINE_ID_2))
+                        PLAYER_ID_2, pageSize, pageToGet, ROUTINE_ID_2)
+                        .with(user(hendryUser)))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
@@ -174,6 +192,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_EmptyScoresPage_When_NoScoresInDb() throws Exception {
         int pageSize = 50;
@@ -194,6 +213,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_ReturnScoresInOnePage_When_OnlyTwoScoresInDb() throws Exception {
         // Add scores to DB before running test
@@ -232,6 +252,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_ReturnScoresInOnePage_When_OnlyOneScoreOutOfTwoInDbMatchingRoutineId() throws Exception {
         // Add scores to DB before running test
@@ -264,6 +285,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateBeforeTo() throws Exception {
         // Add scores to DB before running test
@@ -299,6 +321,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_ReturnJustTwoScores_When_OnlyTwoOutOfThreeDbScoresWithDateAfterFrom() throws Exception {
         // Add scores to DB before running test
@@ -340,6 +363,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateInRange() throws Exception {
         // Add scores to DB before running test
@@ -375,6 +399,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void getScores_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
         // Add scores to DB before running test
@@ -434,6 +459,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
+    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
     void getScoreById_Should_Return200ResponseWithScore_When_ScoreExists() throws Exception {
         String scoreId = IdGenerator.createNewId();
@@ -451,6 +477,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.dateTime").value(scoreOneInDb.getDateTime().format(DATE_FORMATTER)));
     }
 
+    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
     void getScoreById_Should_Return404Response_When_ScoreNotFound() throws Exception {
         String invalidScoreId = "1234";
@@ -461,6 +488,7 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.errorMessage").value("Score not found"));
     }
 
+    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
     void deleteScoreById_Should_Return204Response_When_ScoreExisted() throws Exception {
         String scoreId = IdGenerator.createNewId();
@@ -476,6 +504,7 @@ public class ScoreControllerTestsIT extends BaseIT {
         assertTrue(opt.isEmpty());
     }
 
+    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
     void getScoreById_Should_Return204Response_When_ScoreDidntExist() throws Exception {
         String invalidScoreId = "1234";

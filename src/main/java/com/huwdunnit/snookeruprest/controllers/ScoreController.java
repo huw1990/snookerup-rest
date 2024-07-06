@@ -4,6 +4,10 @@ import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
 import com.huwdunnit.snookeruprest.model.*;
+import com.huwdunnit.snookeruprest.security.Roles;
+import com.huwdunnit.snookeruprest.security.permissions.AdminPermission;
+import com.huwdunnit.snookeruprest.security.permissions.UserOwnerOrAdminPermission;
+import com.huwdunnit.snookeruprest.security.permissions.UserPermission;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +16,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import static com.huwdunnit.snookeruprest.controllers.UserController.USERS_URL;
@@ -36,8 +39,9 @@ public class ScoreController {
 
     private final ScoreRepository scoreRepository;
 
-    @PostMapping
+    @PostMapping(SCORES_URL)
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('" + Roles.USER + "') && #scoreToAdd.getUserId() == principal.getId() || hasRole('" + Roles.ADMIN + "')")
     public Score addScore(@RequestBody Score scoreToAdd) {
         log.debug("addScore score={}", scoreToAdd);
 
@@ -57,6 +61,7 @@ public class ScoreController {
 
     @GetMapping(USERS_URL + "/{userid}/scores")
     @ResponseStatus(HttpStatus.OK)
+    @UserOwnerOrAdminPermission
     public ScoreListResponse getScoresForUser(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
                                        @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
@@ -69,6 +74,7 @@ public class ScoreController {
 
     @GetMapping(SCORES_URL)
     @ResponseStatus(HttpStatus.OK)
+    @AdminPermission
     public ScoreListResponse getScores(@RequestParam(defaultValue = "0", name = "pageNumber") int pageNumber,
                                        @RequestParam(defaultValue = "50", name = "pageSize") int pageSize,
                                        @RequestParam(name = "from") @DateTimeFormat(pattern = Score.DATE_FORMAT)
@@ -158,9 +164,11 @@ public class ScoreController {
 
     @GetMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.OK)
+    @UserPermission
     public Score getScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
         log.debug("getScoreById scoreId={}", scoreId);
 
+        //TODO: get by id and user ID (only if not admin)
         Score scoreResponse = scoreRepository.findById(scoreId).orElseThrow(
                 () -> new ScoreNotFoundException("Score not found, ID=" + scoreId, scoreId));
 
@@ -170,9 +178,11 @@ public class ScoreController {
 
     @DeleteMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @UserPermission
     public void deleteScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
         log.debug("deleteScoreById scoreId={}", scoreId);
 
+        //TODO: delete by id and user id (only if not admin)
         scoreRepository.deleteById(scoreId);
     }
 }

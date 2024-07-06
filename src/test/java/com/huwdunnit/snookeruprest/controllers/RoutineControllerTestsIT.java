@@ -3,9 +3,11 @@ package com.huwdunnit.snookeruprest.controllers;
 import com.huwdunnit.snookeruprest.BaseIT;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.Routine;
+import com.huwdunnit.snookeruprest.security.Roles;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -54,6 +56,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     private static final String TAG_BREAK_BUILDING = "break-building";
     private static final String TAG_POSITION = "positional-play";
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void addRoutine_Should_Return201ResponseWithAddedRoutine() throws Exception {
         Routine routineToAdd = getLineUpRoutine();
