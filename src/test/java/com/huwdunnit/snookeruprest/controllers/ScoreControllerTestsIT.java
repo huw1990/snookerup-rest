@@ -58,7 +58,7 @@ public class ScoreControllerTestsIT extends BaseIT {
         MvcResult result = mockMvc.perform(post("/api/v1/scores")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .with(user(userForScore)))
+                        .with(user(getPrincipalForUser(userForScore))))
                 .andExpect(status().isCreated())
                 .andExpectAll(
                         jsonPath("$.id").exists(),
@@ -91,7 +91,7 @@ public class ScoreControllerTestsIT extends BaseIT {
         MvcResult result = mockMvc.perform(post("/api/v1/scores")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
-                        .with(user(userForScore)))
+                        .with(user(getPrincipalForUser(userForScore))))
                 .andExpect(status().isCreated())
                 .andExpectAll(
                         jsonPath("$.id").exists(),
@@ -138,7 +138,7 @@ public class ScoreControllerTestsIT extends BaseIT {
         // Get the first page of scores
         mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}",
                         PLAYER_ID_2, pageSize, pageToGet)
-                        .with(user(hendryUser)))
+                        .with(user(getPrincipalForUser(hendryUser))))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
@@ -177,7 +177,7 @@ public class ScoreControllerTestsIT extends BaseIT {
         // Get the first page of scores
         mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&routineId={routine-id}",
                         PLAYER_ID_2, pageSize, pageToGet, ROUTINE_ID_2)
-                        .with(user(hendryUser)))
+                        .with(user(getPrincipalForUser(hendryUser))))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),

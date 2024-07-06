@@ -5,6 +5,7 @@ import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.db.UserRepository;
 import com.huwdunnit.snookeruprest.model.User;
+import com.huwdunnit.snookeruprest.security.UserPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 /**
  * Base abstract class for all integration tests. Creates a MongoDB container using Testcontainers, to manage data used
@@ -112,5 +111,15 @@ public abstract class BaseIT {
         user.setLastName(lastName);
         user.setEmail(email);
         return user;
+    }
+
+    /**
+     * Convert a user from the DB into a Spring Scurity user, which we can use to auth with "with(user(X))" on WebMvc
+     * invocations.
+     * @param user The DB user
+     * @return The converted UserPrincipal with values from the DB user
+     */
+    protected UserPrincipal getPrincipalForUser(User user) {
+        return new UserPrincipal(user);
     }
 }

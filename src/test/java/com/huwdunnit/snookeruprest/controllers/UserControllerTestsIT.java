@@ -32,8 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles(profiles = "test")
 public class UserControllerTestsIT extends BaseIT {
 
-    //TODO: change from User object to UserDTO
-    @Disabled
     @Test
     void addUser_Should_Return201ResponseWithAddedUser() throws Exception {
         User userToAdd = getRonnieUser();
@@ -63,8 +61,6 @@ public class UserControllerTestsIT extends BaseIT {
         );
     }
 
-    //TODO: change from User object to UserDTO
-    @Disabled
     @Test
     void addUser_Should_Return400Response_When_EmailAlreadyExists() throws Exception {
         User userToAdd = getRonnieUser();
@@ -209,7 +205,7 @@ public class UserControllerTestsIT extends BaseIT {
         userRepository.insert(ronnieUser);
 
         mockMvc.perform(get("/api/v1/users/{user-id}", userId)
-                        .with(user(ronnieUser)))
+                        .with(user(getPrincipalForUser(ronnieUser))))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.id").value(ronnieUser.getId()),

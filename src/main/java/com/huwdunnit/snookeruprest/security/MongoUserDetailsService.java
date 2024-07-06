@@ -27,7 +27,7 @@ public class MongoUserDetailsService implements UserDetailsService {
         Optional<com.huwdunnit.snookeruprest.model.User> userLookup = userRepository.findByEmail(userName);
 
         if (userLookup.isPresent()) {
-            return userLookup.get();
+            return new UserPrincipal(userLookup.get());
         }
         throw new UsernameNotFoundException("Username " + userName + " not found");
 
