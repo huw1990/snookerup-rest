@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 /**
  * Spring Data MongoDB repository for the Score collection.
@@ -15,6 +16,21 @@ import java.time.LocalDateTime;
  */
 @Repository
 public interface ScoreRepository extends MongoRepository<Score, String> {
+
+    /**
+     * Delete the score from the database with the provided ID, but only if the provided user ID also matches.
+     * @param id The score ID to delete
+     * @param userId The user ID that must also be present on the score in order for the delete to occur
+     */
+    void deleteByIdAndUserId(String id, String userId);
+
+    /**
+     * Get the score from the database with the provided ID, but only if the provided user ID also matches.
+     * @param id The ID of the score to get
+     * @param userId The user ID that must also be present on the score in order for the retrieval to succeed
+     * @return An Optional containing the returned score
+     */
+    Optional<Score> findByIdAndUserId(String id, String userId);
 
     /**
      * Get all scores for the provided user ID.

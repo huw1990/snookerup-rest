@@ -5,6 +5,7 @@ import com.huwdunnit.snookeruprest.db.ScoreRepository;
 import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
 import com.huwdunnit.snookeruprest.model.*;
 import com.huwdunnit.snookeruprest.security.Roles;
+import com.huwdunnit.snookeruprest.security.UserPrincipal;
 import com.huwdunnit.snookeruprest.security.permissions.AdminPermission;
 import com.huwdunnit.snookeruprest.security.permissions.UserOwnerOrAdminPermission;
 import com.huwdunnit.snookeruprest.security.permissions.UserPermission;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -165,12 +167,20 @@ public class ScoreController {
     @GetMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.OK)
     @UserPermission
-    public Score getScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
+    public Score getScoreById(@PathVariable(name = "id") @NotBlank String scoreId,
+                              @AuthenticationPrincipal UserPrincipal userPrincipal) {
         log.debug("getScoreById scoreId={}", scoreId);
 
-        //TODO: get by id and user ID (only if not admin)
-        Score scoreResponse = scoreRepository.findById(scoreId).orElseThrow(
-                () -> new ScoreNotFoundException("Score not found, ID=" + scoreId, scoreId));
+        Score scoreResponse;
+        if (userPrincipal.isAdmin()) {
+            // User is an admin, so just get the score by ID
+            scoreResponse = scoreRepository.findById(scoreId).orElseThrow(
+                    () -> new ScoreNotFoundException("Score not found, ID=" + scoreId, scoreId));
+        } else {
+            // User is not an admin, so only return the score if the user ID matches the principal's ID
+            scoreResponse = scoreRepository.findByIdAndUserId(scoreId, userPrincipal.getId()).orElseThrow(
+                    () -> new ScoreNotFoundException("Score not found, ID=" + scoreId, scoreId));
+        }
 
         log.debug("Returning score={}", scoreResponse);
         return scoreResponse;
@@ -179,10 +189,16 @@ public class ScoreController {
     @DeleteMapping(SCORES_URL + "/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @UserPermission
-    public void deleteScoreById(@PathVariable(name = "id") @NotBlank String scoreId) {
+    public void deleteScoreById(@PathVariable(name = "id") @NotBlank String scoreId,
+                                @AuthenticationPrincipal UserPrincipal userPrincipal) {
         log.debug("deleteScoreById scoreId={}", scoreId);
 
-        //TODO: delete by id and user id (only if not admin)
-        scoreRepository.deleteById(scoreId);
+        if (userPrincipal.isAdmin()) {
+            // User is an admin, so just delete the score by ID
+            scoreRepository.deleteById(scoreId);
+        } else {
+            // User is not an admin, so only delete the score if the user ID matches the principal's ID
+            scoreRepository.deleteByIdAndUserId(scoreId, userPrincipal.getId());
+        }
     }
 }

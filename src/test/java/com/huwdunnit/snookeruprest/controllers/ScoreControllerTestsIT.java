@@ -5,6 +5,7 @@ import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.Score;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.security.Roles;
+import com.huwdunnit.snookeruprest.security.UserPrincipal;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -459,15 +460,19 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
-    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
-    void getScoreById_Should_Return200ResponseWithScore_When_ScoreExists() throws Exception {
+    void getScoreById_Should_Return200ResponseWithScore_When_ScoreExistsAndAdminUser() throws Exception {
         String scoreId = IdGenerator.createNewId();
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(scoreId);
         scoreRepository.insert(scoreOneInDb);
+        User adminUser = new User();
+        adminUser.setId(IdGenerator.createNewId());
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
-        mockMvc.perform(get("/api/v1/scores/{score-id}", scoreId))
+        mockMvc.perform(get("/api/v1/scores/{score-id}", scoreId)
+                        .with(user(userPrincipal)))
                 .andExpect(status().isOk())
                 .andExpectAll(
                         jsonPath("$.id").value(scoreOneInDb.getId()),
@@ -477,26 +482,72 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.dateTime").value(scoreOneInDb.getDateTime().format(DATE_FORMATTER)));
     }
 
-    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
-    void getScoreById_Should_Return404Response_When_ScoreNotFound() throws Exception {
-        String invalidScoreId = "1234";
+    void getScoreById_Should_Return200ResponseWithScore_When_ScoreExistsAndOwnedByUser() throws Exception {
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(scoreId);
+        scoreRepository.insert(scoreOneInDb);
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_1);
+        UserPrincipal userPrincipal = new UserPrincipal(hendryUser);
 
-        mockMvc.perform(get("/api/v1/scores/{score-id}", invalidScoreId))
+        mockMvc.perform(get("/api/v1/scores/{score-id}", scoreId)
+                        .with(user(userPrincipal)))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(scoreOneInDb.getId()),
+                        jsonPath("$.value").value(scoreOneInDb.getValue()),
+                        jsonPath("$.routineId").value(scoreOneInDb.getRoutineId()),
+                        jsonPath("$.userId").value(scoreOneInDb.getUserId()),
+                        jsonPath("$.dateTime").value(scoreOneInDb.getDateTime().format(DATE_FORMATTER)));
+    }
+
+    @Test
+    void getScoreById_Should_Return404Response_When_ScoreNotOwnedByUser() throws Exception {
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(scoreId);
+        scoreRepository.insert(scoreOneInDb);
+        User hendryUser = getHendryUser();
+        hendryUser.setId(IdGenerator.createNewId());
+        UserPrincipal userPrincipal = new UserPrincipal(hendryUser);
+
+        mockMvc.perform(get("/api/v1/scores/{score-id}", scoreId)
+                        .with(user(userPrincipal)))
                 .andExpect(status().isNotFound())
                 .andExpectAll(
                         jsonPath("$.errorMessage").value("Score not found"));
     }
 
-    @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
-    void deleteScoreById_Should_Return204Response_When_ScoreExisted() throws Exception {
+    void getScoreById_Should_Return404Response_When_ScoreNotFound() throws Exception {
+        String invalidScoreId = "1234";
+        User adminUser = new User();
+        adminUser.setId(IdGenerator.createNewId());
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
+
+        mockMvc.perform(get("/api/v1/scores/{score-id}", invalidScoreId)
+                        .with(user(userPrincipal)))
+                .andExpect(status().isNotFound())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Score not found"));
+    }
+
+    @Test
+    void deleteScoreById_Should_Return204Response_When_ScoreExistedAndAdminUser() throws Exception {
         String scoreId = IdGenerator.createNewId();
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(scoreId);
         scoreRepository.insert(scoreOneInDb);
+        User adminUser = new User();
+        adminUser.setId(IdGenerator.createNewId());
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
-        mockMvc.perform(delete("/api/v1/scores/{score-id}", scoreId))
+        mockMvc.perform(delete("/api/v1/scores/{score-id}", scoreId)
+                        .with(user(userPrincipal)))
                 .andExpect(status().isNoContent());
 
         // Verify the score has been deleted from the DB
@@ -506,10 +557,34 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = {Roles.ADMIN, Roles.USER})
     @Test
-    void getScoreById_Should_Return204Response_When_ScoreDidntExist() throws Exception {
-        String invalidScoreId = "1234";
+    void deleteScoreById_Should_Return204Response_When_ScoreExistedAndOwnedByUser() throws Exception {
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(scoreId);
+        scoreRepository.insert(scoreOneInDb);
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_1);
+        UserPrincipal userPrincipal = new UserPrincipal(hendryUser);
 
-        mockMvc.perform(delete("/api/v1/scores/{score-id}", invalidScoreId))
+        mockMvc.perform(delete("/api/v1/scores/{score-id}", scoreId)
+                        .with(user(userPrincipal)))
+                .andExpect(status().isNoContent());
+
+        // Verify the score has been deleted from the DB
+        Optional<Score> opt = scoreRepository.findById(scoreId);
+        assertTrue(opt.isEmpty());
+    }
+
+    @Test
+    void deleteScoreById_Should_Return204Response_When_ScoreDidntExistAndAdminUser() throws Exception {
+        String invalidScoreId = "1234";
+        User adminUser = new User();
+        adminUser.setId(IdGenerator.createNewId());
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
+
+        mockMvc.perform(delete("/api/v1/scores/{score-id}", invalidScoreId)
+                        .with(user(userPrincipal)))
                 .andExpect(status().isNoContent());
     }
 

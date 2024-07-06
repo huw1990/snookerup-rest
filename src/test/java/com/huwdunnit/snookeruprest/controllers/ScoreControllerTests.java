@@ -2,11 +2,11 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.ScoreRepository;
-import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
 import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
-import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.Score;
 import com.huwdunnit.snookeruprest.model.ScoreListResponse;
+import com.huwdunnit.snookeruprest.model.User;
+import com.huwdunnit.snookeruprest.security.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -408,17 +408,20 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void getScoreById_Should_ReturnScore_When_ScoreWithIdExists() {
+    public void getScoreById_Should_ReturnScore_When_ScoreWithIdExistsAndAdminUser() {
         // Define variables
         String scoreId = IdGenerator.createNewId();
         Score scoreOne = getScoreOne();
         scoreOne.setId(scoreId);
+        User adminUser = new User();
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
         // Set mock expectations
         when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.of(scoreOne));
 
         // Execute method under test
-        Score returnedScore = scoreController.getScoreById(scoreId);
+        Score returnedScore = scoreController.getScoreById(scoreId, userPrincipal);
 
         // Verify
         assertNotNull(returnedScore);
@@ -428,9 +431,36 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void getScoreById_Should_ThrowScoreNotFoundException_When_ScoreNotFound() {
+    public void getScoreById_Should_ReturnScore_When_ScoreWithIdExistsAndIsOwnedByUser() {
+        // Define variables
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(scoreId);
+        String userId = IdGenerator.createNewId();
+        User user = new User();
+        user.setId(userId);
+        UserPrincipal userPrincipal = new UserPrincipal(user);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByIdAndUserId(scoreId, userId)).thenReturn(Optional.of(scoreOne));
+
+        // Execute method under test
+        Score returnedScore = scoreController.getScoreById(scoreId, userPrincipal);
+
+        // Verify
+        assertNotNull(returnedScore);
+        assertEquals(scoreOne, returnedScore);
+
+        verify(mockScoreRepository).findByIdAndUserId(scoreId, userId);
+    }
+
+    @Test
+    public void getScoreById_Should_ThrowScoreNotFoundException_When_ScoreNotFoundAndAdminUser() {
         // Define variables
         String scoreId = "1234";
+        User adminUser = new User();
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
         // Set mock expectations
         when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.empty());
@@ -438,7 +468,7 @@ public class ScoreControllerTests {
         // Execute method under test
         Score returnedScore = null;
         try {
-            returnedScore = scoreController.getScoreById(scoreId);
+            returnedScore = scoreController.getScoreById(scoreId, userPrincipal);
             fail("Expected ScoreNotFoundException");
         } catch (ScoreNotFoundException ex) {
             // Exception thrown as expected
@@ -449,32 +479,57 @@ public class ScoreControllerTests {
     }
 
     @Test
-    public void deleteScoreById_Should_DeleteScore_When_ScoreWithIdExists() {
+    public void deleteScoreById_Should_DeleteScore_When_ScoreWithIdExistsAndAdminUser() {
         // Define variables
         String scoreId = IdGenerator.createNewId();
         Score scoreOne = getScoreOne();
         scoreOne.setId(scoreId);
+        User adminUser = new User();
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
         // Set mock expectations
-        when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.of(scoreOne));
 
         // Execute method under test
-        scoreController.deleteScoreById(scoreId);
+        scoreController.deleteScoreById(scoreId, userPrincipal);
 
         // Verify
         verify(mockScoreRepository).deleteById(scoreId);
     }
 
     @Test
-    public void deleteScoreById_Should_DoNothing_When_ScoreNotFound() {
+    public void deleteScoreById_Should_DeleteScore_When_ScoreWithIdExistsAndOwnedByUser() {
+        // Define variables
+        String scoreId = IdGenerator.createNewId();
+        Score scoreOne = getScoreOne();
+        scoreOne.setId(scoreId);
+        String userId = IdGenerator.createNewId();
+        User user = new User();
+        user.setId(userId);
+        UserPrincipal userPrincipal = new UserPrincipal(user);
+
+        // Set mock expectations
+
+        // Execute method under test
+        scoreController.deleteScoreById(scoreId, userPrincipal);
+
+        // Verify
+        verify(mockScoreRepository).deleteByIdAndUserId(scoreId, userId);
+    }
+
+    @Test
+    public void deleteScoreById_Should_DoNothing_When_ScoreNotFoundAndAdminUser() {
         // Define variables
         String scoreId = "1234";
+        User adminUser = new User();
+        adminUser.setAdmin(true);
+        UserPrincipal userPrincipal = new UserPrincipal(adminUser);
 
         // Set mock expectations
         when(mockScoreRepository.findById(scoreId)).thenReturn(Optional.empty());
 
         // Execute method under test
-        scoreController.deleteScoreById(scoreId);
+        scoreController.deleteScoreById(scoreId, userPrincipal);
 
         // Verify
         verify(mockScoreRepository).deleteById(scoreId);
