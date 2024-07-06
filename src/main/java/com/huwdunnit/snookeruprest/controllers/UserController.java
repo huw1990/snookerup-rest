@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import static com.huwdunnit.snookeruprest.controllers.UserController.USERS_URL;
@@ -33,6 +34,8 @@ public class UserController {
 
     private final UserRepository userRepository;
 
+    private final PasswordEncoder passwordEncoder;
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User addUser(@RequestBody User userToAdd) {
@@ -41,10 +44,16 @@ public class UserController {
         // Don't allow users to create themselves as admin users
         userToAdd.setAdmin(false);
 
+        // Encode password before saving to DB
+        userToAdd.setPassword(passwordEncoder.encode(userToAdd.getPassword()));
+
         String generatedUserId = IdGenerator.createNewId();
         userToAdd.setId(generatedUserId);
 
         User addedUser = userRepository.insert(userToAdd);
+
+        // Null out the password before we return it to the user
+        addedUser.setPassword(null);
 
         log.debug("Returning new user {}", addedUser);
         return addedUser;
@@ -73,6 +82,9 @@ public class UserController {
 
         User userResponse = userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException("User not found, ID=" + userId, userId));
+
+        // Null out the password before we return it to the user
+        userResponse.setPassword(null);
 
         log.debug("Returning user={}", userResponse);
         return userResponse;

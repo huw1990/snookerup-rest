@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,23 +29,26 @@ public class UserControllerTests {
 
     private static final String RONNIE_EMAIL = "ronnieo@example.com";
     private static final String RONNIE_FIRST_NAME = "Ronnie";
-
     private static final String RONNIE_LAST_NAME = "O'Sullivan";
-
     private static final String HENDRY_EMAIL = "hendry@example.com";
     private static final String HENDRY_FIRST_NAME = "Stephen";
-
     private static final String HENDRY_LAST_NAME = "Hendry";
+    private static final String PLAINTEXT_PASSWORD = "password";
+    private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
 
     private UserRepository mockUserRepository;
+    private PasswordEncoder mockPasswordEncoder;
 
     private UserController userController;
 
     @BeforeEach
     public void beforeEach() {
         mockUserRepository = mock(UserRepository.class);
+        mockPasswordEncoder = mock(PasswordEncoder.class);
 
-        userController = new UserController(mockUserRepository);
+        when(mockPasswordEncoder.encode(PLAINTEXT_PASSWORD)).thenReturn(ENCRYPTED_PASSWORD);
+
+        userController = new UserController(mockUserRepository, mockPasswordEncoder);
     }
 
     @Test
@@ -54,6 +58,7 @@ public class UserControllerTests {
         userToAdd.setEmail(RONNIE_EMAIL);
         userToAdd.setFirstName(RONNIE_FIRST_NAME);
         userToAdd.setLastName(RONNIE_LAST_NAME);
+        userToAdd.setPassword(PLAINTEXT_PASSWORD);
         User expectedUser = new User();
         expectedUser.setEmail(RONNIE_EMAIL);
         expectedUser.setFirstName(RONNIE_FIRST_NAME);
@@ -70,7 +75,11 @@ public class UserControllerTests {
         assertNotNull(addedUser);
         assertEquals(expectedUser, addedUser);
 
-        verify(mockUserRepository).insert(any(User.class));
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(mockUserRepository).insert(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+        assertFalse(capturedUser.isAdmin());
+        assertEquals(ENCRYPTED_PASSWORD, capturedUser.getPassword());
     }
 
     @Test
@@ -225,11 +234,19 @@ public class UserControllerTests {
     public void getUserById_Should_ReturnUser_When_UserWithIdExists() {
         // Define variables
         String userId = "1234";
+        // User returned from DB
         User ronnieUser = new User();
         ronnieUser.setEmail(RONNIE_EMAIL);
         ronnieUser.setFirstName(RONNIE_FIRST_NAME);
         ronnieUser.setLastName(RONNIE_LAST_NAME);
         ronnieUser.setId(userId);
+        ronnieUser.setPassword(ENCRYPTED_PASSWORD);
+        // User returned from controller (note password not set)
+        User ronnieReturnedUser = new User();
+        ronnieReturnedUser.setEmail(RONNIE_EMAIL);
+        ronnieReturnedUser.setFirstName(RONNIE_FIRST_NAME);
+        ronnieReturnedUser.setLastName(RONNIE_LAST_NAME);
+        ronnieReturnedUser.setId(userId);
 
         // Set mock expectations
         when(mockUserRepository.findById(userId)).thenReturn(Optional.of(ronnieUser));
@@ -239,7 +256,7 @@ public class UserControllerTests {
 
         // Verify
         assertNotNull(returnedUser);
-        assertEquals(ronnieUser, returnedUser);
+        assertEquals(ronnieReturnedUser, returnedUser);
 
         verify(mockUserRepository).findById(userId);
     }
