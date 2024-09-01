@@ -5,7 +5,6 @@ import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import com.huwdunnit.snookeruprest.security.Roles;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -15,8 +14,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +53,7 @@ public class UserControllerTestsIT extends BaseIT {
         // Get the user by ID from the DB.
         Optional<User> opt = userRepository.findById(addedUserId);
 
+        // Verify all field in the response (apart from password, which should be blank) matches the DB user
         opt.ifPresentOrElse(
                 (userInDb) -> {
                     assertEquals(userInResponse.getId(), userInDb.getId(),
@@ -65,6 +64,7 @@ public class UserControllerTestsIT extends BaseIT {
                             "Last names different in response and DB");
                     assertEquals(userInResponse.getEmail(), userInDb.getEmail(),
                             "Emails different in response and DB");
+                    assertNull(userInResponse.getPassword(), "Password in response should be null");
 
                 },
                 () -> fail("User with ID from response not found in the DB")
@@ -92,9 +92,20 @@ public class UserControllerTestsIT extends BaseIT {
                 .andReturn();
     }
 
+    @Test
+    void getAllUsers_Should_Return401_When_NoAuthProvided() throws Exception {
+        int pageSize = 50;
+        int pageToGet = 0;
+
+        // Get the first page of users
+        mockMvc.perform(get("/api/v1/users?pageSize={page-size}&pageNumber={page-number}",
+                        pageSize, pageToGet))
+                .andExpect(status().isUnauthorized());
+    }
+
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getAllUsers_Should_EmptyUsersPage_When_NoUsersInDb() throws Exception {
+    void getAllUsers_Should_ReturnEmptyUsersPage_When_NoUsersInDbAndReqMadeByAdmin() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
         int expectedNumberOfPages = 0;
@@ -115,7 +126,7 @@ public class UserControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getAllUsers_Should_UsersInOnePage_When_OnlyTwoUsersInDb() throws Exception {
+    void getAllUsers_Should_ReturnUsersInOnePage_When_OnlyTwoUsersInDbAndReqMadeByAdmin() throws Exception {
         // Add users to DB before running test
         User ronnieInDb = getRonnieUser();
         ronnieInDb.setId(IdGenerator.createNewId());
@@ -152,7 +163,7 @@ public class UserControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getAllUsers_Should_UsersInTwoPages_When_RequestedPagesOfTwoButThreeUsersInDb() throws Exception {
+    void getAllUsers_Should_UsersInTwoPages_When_RequestedPagesOfTwoButThreeUsersInDbAndReqMadeByAdmin() throws Exception {
         // Add users to DB before running test
         User ronnieInDb = getRonnieUser();
         ronnieInDb.setId(IdGenerator.createNewId());
@@ -208,7 +219,7 @@ public class UserControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getUserById_Should_Return200ResponseWithUser_When_UserExists() throws Exception {
+    void getUserById_Should_Return200ResponseWithUser_When_UserExistsAndReqMadeBySameUser() throws Exception {
         String userId = "1234";
         User ronnieUser = getRonnieUser();
         ronnieUser.setId(userId);
@@ -226,7 +237,24 @@ public class UserControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getUserById_Should_Return404Response_When_UserNotFound() throws Exception {
+    void getUserById_Should_Return200ResponseWithUser_When_UserExistsAndReqMadeByAdmin() throws Exception {
+        String userId = "1234";
+        User ronnieUser = getRonnieUser();
+        ronnieUser.setId(userId);
+        userRepository.insert(ronnieUser);
+
+        mockMvc.perform(get("/api/v1/users/{user-id}", userId))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.id").value(ronnieUser.getId()),
+                        jsonPath("$.firstName").value(ronnieUser.getFirstName()),
+                        jsonPath("$.lastName").value(ronnieUser.getLastName()),
+                        jsonPath("$.email").value(ronnieUser.getEmail()));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getUserById_Should_Return404Response_When_UserNotFoundAndReqMadeByAdmin() throws Exception {
         String invalidUserId = "1234";
 
         mockMvc.perform(get("/api/v1/users/{user-id}", invalidUserId))
