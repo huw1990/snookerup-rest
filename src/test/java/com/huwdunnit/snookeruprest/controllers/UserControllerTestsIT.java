@@ -56,7 +56,17 @@ public class UserControllerTestsIT extends BaseIT {
         Optional<User> opt = userRepository.findById(addedUserId);
 
         opt.ifPresentOrElse(
-                (userInDb) -> assertEquals(userInResponse, userInDb, "User returned in response is different to user in DB"),
+                (userInDb) -> {
+                    assertEquals(userInResponse.getId(), userInDb.getId(),
+                            "IDs different in response and DB");
+                    assertEquals(userInResponse.getFirstName(), userInDb.getFirstName(),
+                            "First names different in response and DB");
+                    assertEquals(userInResponse.getLastName(), userInDb.getLastName(),
+                            "Last names different in response and DB");
+                    assertEquals(userInResponse.getEmail(), userInDb.getEmail(),
+                            "Emails different in response and DB");
+
+                },
                 () -> fail("User with ID from response not found in the DB")
         );
     }

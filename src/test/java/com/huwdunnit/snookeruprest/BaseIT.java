@@ -36,16 +36,19 @@ public abstract class BaseIT {
     private static final String RONNIE_FIRST_NAME = "Ronnie";
 
     private static final String RONNIE_LAST_NAME = "O'Sullivan";
+    private static final String RONNIE_PASSWORD = "ronnie-pw";
 
     private static final String HENDRY_EMAIL = "hendry@example.com";
     private static final String HENDRY_FIRST_NAME = "Stephen";
 
     private static final String HENDRY_LAST_NAME = "Hendry";
+    private static final String HENDRY_PASSWORD = "hendry-pw";
 
     private static final String WILLO_EMAIL = "willo@example.com";
     private static final String WILLO_FIRST_NAME = "Mark";
 
     private static final String WILLO_LAST_NAME = "Williams";
+    private static final String WILLO_PASSWORD = "mark-pw";
 
     @Container
     protected static GenericContainer<?> MONGODB_CONTAINER = new GenericContainer<>(DockerImageName.parse("mongo"))
@@ -94,22 +97,23 @@ public abstract class BaseIT {
     }
 
     protected User getRonnieUser() {
-        return createUser(RONNIE_FIRST_NAME, RONNIE_LAST_NAME, RONNIE_EMAIL);
+        return createUser(RONNIE_FIRST_NAME, RONNIE_LAST_NAME, RONNIE_EMAIL, RONNIE_PASSWORD);
     }
 
     protected User getHendryUser() {
-        return createUser(HENDRY_FIRST_NAME, HENDRY_LAST_NAME, HENDRY_EMAIL);
+        return createUser(HENDRY_FIRST_NAME, HENDRY_LAST_NAME, HENDRY_EMAIL, HENDRY_PASSWORD);
     }
 
     protected User getWilloUser() {
-        return createUser(WILLO_FIRST_NAME, WILLO_LAST_NAME, WILLO_EMAIL);
+        return createUser(WILLO_FIRST_NAME, WILLO_LAST_NAME, WILLO_EMAIL, WILLO_PASSWORD);
     }
 
-    private User createUser(String firstName, String lastName, String email) {
+    private User createUser(String firstName, String lastName, String email, String password) {
         User user = new User();
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setEmail(email);
+        user.setPassword(password);
         return user;
     }
 
