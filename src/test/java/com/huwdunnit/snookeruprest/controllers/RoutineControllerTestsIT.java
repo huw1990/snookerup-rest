@@ -56,9 +56,21 @@ public class RoutineControllerTestsIT extends BaseIT {
     private static final String TAG_BREAK_BUILDING = "break-building";
     private static final String TAG_POSITION = "positional-play";
 
+    @Test
+    void addRoutine_Should_Return401_When_NoAuthProvided() throws Exception {
+        Routine routineToAdd = getLineUpRoutine();
+        String requestBody = objectMapper.writeValueAsString(routineToAdd);
+
+        // Get the first page of users
+        mockMvc.perform(post("/api/v1/routines")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isUnauthorized());
+    }
+
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void addRoutine_Should_Return201ResponseWithAddedRoutine() throws Exception {
+    void addRoutine_Should_Return201ResponseWithAddedRoutine_When_ReqMadeByAdmin() throws Exception {
         Routine routineToAdd = getLineUpRoutine();
         String requestBody = objectMapper.writeValueAsString(routineToAdd);
 
@@ -90,7 +102,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDb() throws Exception {
+    void getRoutines_Should_EmptyRoutinesPage_When_NoRoutinesInDbAndNoAuth() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
         int expectedNumberOfPages = 0;
@@ -110,7 +122,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutines_Should_RoutinesInOnePage_When_OnlyTwoRoutinesInDb() throws Exception {
+    void getRoutines_Should_RoutinesInOnePage_When_OnlyTwoRoutinesInDbAndNoAuth() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -152,7 +164,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutines_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
+    void getRoutines_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDbAndNoAuth() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -216,7 +228,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutines_Should_ReturnOneRoutine_When_OnlyOneRoutineWithRequestedTag() throws Exception {
+    void getRoutines_Should_ReturnOneRoutine_When_OnlyOneRoutineWithRequestedTagAndNoAuth() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -252,7 +264,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutines_Should_ReturnThreeRoutines_When_MultipleTagsRequested() throws Exception {
+    void getRoutines_Should_ReturnThreeRoutines_When_MultipleTagsRequestedAndNoAuth() throws Exception {
         // Add routines to DB before running test
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(IdGenerator.createNewId());
@@ -304,7 +316,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutineById_Should_Return200ResponseWithRoutine_When_RoutineExists() throws Exception {
+    void getRoutineById_Should_Return200ResponseWithRoutine_When_RoutineExistsAndNoAuth() throws Exception {
         String routineId = "1234";
         Routine lineUpInDb = getLineUpRoutine();
         lineUpInDb.setId(routineId);
@@ -323,7 +335,7 @@ public class RoutineControllerTestsIT extends BaseIT {
     }
 
     @Test
-    void getRoutineById_Should_Return404Response_When_RoutineNotFound() throws Exception {
+    void getRoutineById_Should_Return404Response_When_RoutineNotFoundAndNoAuth() throws Exception {
         String invalidRoutineId = "1234";
 
         mockMvc.perform(get("/api/v1/routines/{routine-id}", invalidRoutineId))
