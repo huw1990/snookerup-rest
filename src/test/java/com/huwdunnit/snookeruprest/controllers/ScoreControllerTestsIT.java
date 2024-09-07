@@ -49,7 +49,7 @@ public class ScoreControllerTestsIT extends BaseIT {
     private static final String DATE_STRING_3 = "02/3/2024-19:25";
 
     @Test
-    void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReq() throws Exception {
+    void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReqAndScoreIsForCurrentUser() throws Exception {
         User userForScore = this.getHendryUser();
         userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
@@ -82,8 +82,42 @@ public class ScoreControllerTestsIT extends BaseIT {
         );
     }
 
+    @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void addScore_Should_Return201ResponseWithAddedScore_When_DateNotIncludedInReq() throws Exception {
+    void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReqAndScoreIsForOtherUserButReqFromAdmin() throws Exception {
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.id").exists(),
+                        jsonPath("$.value").value(scoreToAdd.getValue()),
+                        jsonPath("$.userId").value(scoreToAdd.getUserId()),
+                        jsonPath("$.routineId").value(scoreToAdd.getRoutineId()),
+                        jsonPath("$.dateTime").value(scoreToAdd.getDateTime().format(DATE_FORMATTER)))
+                .andReturn();
+
+        // Get the score's ID so we can check it exists in the DB
+        Score scoreInResponse = objectMapper.readValue(result.getResponse().getContentAsString(), Score.class);
+        String addedScoreId = scoreInResponse.getId();
+
+        // Get the user by ID from the DB.
+        Optional<Score> opt = scoreRepository.findById(addedScoreId);
+
+        opt.ifPresentOrElse(
+                (scoreInDb) -> assertEquals(scoreInResponse, scoreInDb, "Score returned in response is different to score in DB"),
+                () -> fail("Score with ID from response not found in the DB")
+        );
+    }
+
+    @Test
+    void addScore_Should_Return201ResponseWithAddedScore_When_DateNotIncludedInReqAndScoreIsForCurrentUser() throws Exception {
         User userForScore = this.getHendryUser();
         userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
@@ -113,6 +147,45 @@ public class ScoreControllerTestsIT extends BaseIT {
                 (scoreInDb) -> assertEquals(scoreInResponse, scoreInDb, "Score returned in response is different to score in DB"),
                 () -> fail("Score with ID from response not found in the DB")
         );
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresForProvidedUserAndReqFromAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}",
+                        PLAYER_ID_2, pageSize, pageToGet))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreTwoInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreTwoInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreTwoInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreTwoInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreTwoInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
     @Test
@@ -195,7 +268,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_EmptyScoresPage_When_NoScoresInDb() throws Exception {
+    void getScores_Should_EmptyScoresPage_When_NoScoresInDbAndReqByAdmin() throws Exception {
         int pageSize = 50;
         int pageToGet = 0;
         int expectedNumberOfPages = 0;
@@ -216,7 +289,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_ReturnScoresInOnePage_When_OnlyTwoScoresInDb() throws Exception {
+    void getScores_Should_ReturnScoresInOnePage_When_OnlyTwoScoresInDbAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());
@@ -255,7 +328,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_ReturnScoresInOnePage_When_OnlyOneScoreOutOfTwoInDbMatchingRoutineId() throws Exception {
+    void getScores_Should_ReturnScoresInOnePage_When_OnlyOneScoreOutOfTwoInDbMatchingRoutineIdAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());
@@ -288,7 +361,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateBeforeTo() throws Exception {
+    void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateBeforeToAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());
@@ -324,7 +397,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_ReturnJustTwoScores_When_OnlyTwoOutOfThreeDbScoresWithDateAfterFrom() throws Exception {
+    void getScores_Should_ReturnJustTwoScores_When_OnlyTwoOutOfThreeDbScoresWithDateAfterFromAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());
@@ -366,7 +439,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateInRange() throws Exception {
+    void getScores_Should_ReturnJustOneScore_When_OnlyOneOutOfThreeDbScoresWithDateInRangeAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());
@@ -402,7 +475,7 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
-    void getScores_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDb() throws Exception {
+    void getScores_Should_RoutinesInTwoPages_When_RequestedPagesOfTwoButThreeRoutinesInDbAndReqByAdmin() throws Exception {
         // Add scores to DB before running test
         Score scoreOneInDb = getScoreOne();
         scoreOneInDb.setId(IdGenerator.createNewId());

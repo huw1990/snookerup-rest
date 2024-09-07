@@ -479,6 +479,31 @@ public class ScoreControllerTests {
     }
 
     @Test
+    public void getScoreById_Should_ThrowScoreNotFoundException_When_ScoreForUserNotFound() {
+        // Define variables
+        String scoreId = "1234";
+        User user = new User();
+        String userId = "abcd";
+        user.setId(userId);
+        UserPrincipal userPrincipal = new UserPrincipal(user);
+
+        // Set mock expectations
+        when(mockScoreRepository.findByIdAndUserId(scoreId, userId)).thenReturn(Optional.empty());
+
+        // Execute method under test
+        Score returnedScore = null;
+        try {
+            returnedScore = scoreController.getScoreById(scoreId, userPrincipal);
+            fail("Expected ScoreNotFoundException");
+        } catch (ScoreNotFoundException ex) {
+            // Exception thrown as expected
+        }
+
+        // Verify
+        assertNull(returnedScore);
+    }
+
+    @Test
     public void deleteScoreById_Should_DeleteScore_When_ScoreWithIdExistsAndAdminUser() {
         // Define variables
         String scoreId = IdGenerator.createNewId();
