@@ -4,6 +4,7 @@ import com.huwdunnit.snookeruprest.model.Score;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -58,65 +59,6 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
     Page<Score> findByUserIdAndRoutineId(Pageable pageConstraints, String userId, String routineId);
 
     /**
-     * Get all scores for a user where the date is between the "from" and "to" dates.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param from From date
-     * @param to To date
-     * @return All scores for the provided user within the provided dates
-     */
-    Page<Score> findByUserIdAndDateTimeBetween(Pageable pageConstraints, String userId, LocalDateTime from, LocalDateTime to);
-
-    /**
-     * Get all scores for a user and routine where the date is between the "from" and "to" dates.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param routineId The routine ID to get scores for
-     * @param from From date
-     * @param to To date
-     * @return All scores for the provided user and routine within the provided dates
-     */
-    Page<Score> findByUserIdAndRoutineIdAndDateTimeBetween(Pageable pageConstraints, String userId, String routineId, LocalDateTime from, LocalDateTime to);
-
-    /**
-     * Get all scores for a user where the date is after the "from" date.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param from From date
-     * @return All scores for the provided user after the provided date
-     */
-    Page<Score> findByUserIdAndDateTimeAfter(Pageable pageConstraints, String userId, LocalDateTime from);
-
-    /**
-     * Get all scores for a user and routine where the date is after the "from" date.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param routineId The routine ID to get scores for
-     * @param from From date
-     * @return All scores for the provided user and routine after the provided date
-     */
-    Page<Score> findByUserIdAndRoutineIdAndDateTimeAfter(Pageable pageConstraints, String userId, String routineId, LocalDateTime from);
-
-    /**
-     * Get all scores for a user where the date is before the "to" date.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param to To date
-     * @return All scores for the provided user before the provided date
-     */
-    Page<Score> findByUserIdAndDateTimeBefore(Pageable pageConstraints, String userId, LocalDateTime to);
-
-    /**
-     * Get all scores for a user and routine where the date is before the "to" date.
-     * @param pageConstraints Constraints for paging
-     * @param userId The user ID to get scores for
-     * @param routineId The routine ID to get scores for
-     * @param to To date
-     * @return All scores for the provided user and routine before the provided date
-     */
-    Page<Score> findByUserIdAndRoutineIdAndDateTimeBefore(Pageable pageConstraints, String userId, String routineId, LocalDateTime to);
-
-    /**
      * Get all scores where the date is between the "from" and "to" dates.
      * @param pageConstraints Constraints for paging
      * @param from From date
@@ -124,15 +66,6 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @return All scores within the provided dates
      */
     Page<Score> findByDateTimeBetween(Pageable pageConstraints, LocalDateTime from, LocalDateTime to);
-
-    /**
-     * Get all scores where the date is between the "from" and "to" dates.
-     * @param pageConstraints Constraints for paging
-     * @param from From date
-     * @param to To date
-     * @return All scores within the provided dates
-     */
-    Page<Score> findByRoutineIdAndDateTimeBetween(Pageable pageConstraints, String routineId, LocalDateTime from, LocalDateTime to);
 
     /**
      * Get all scores where the date is after the "from" date.
@@ -143,14 +76,6 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
     Page<Score> findByDateTimeAfter(Pageable pageConstraints, LocalDateTime from);
 
     /**
-     * Get all scores where the date is after the "from" date.
-     * @param pageConstraints Constraints for paging
-     * @param from From date
-     * @return All scores after the provided date
-     */
-    Page<Score> findByRoutineIdAndDateTimeAfter(Pageable pageConstraints, String routineId, LocalDateTime from);
-
-    /**
      * Get all scores where the date is before the "to" date.
      * @param pageConstraints Constraints for paging
      * @param to To date
@@ -158,11 +83,105 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      */
     Page<Score> findByDateTimeBefore(Pageable pageConstraints, LocalDateTime to);
 
-    /**
-     * Get all scores where the date is before the "to" date.
-     * @param pageConstraints Constraints for paging
-     * @param to To date
-     * @return All scores before the provided date
+    /*
+     * QUERIES WITH OPTIONAL PARAMETERS:
+     * The below queries use raw MongoDB syntax to allow us to pass in optional parameters, which we can't do with
+     * named queries (i.e. methods such as "findByFooAndBar(String foo, String bar)"). The MongoDB syntax looks
+     * complicated, but it's actually just following the format:
+     *
+     * {
+     *   $and: [
+     *     {
+     *       $or : [
+     *         { $expr: { $eq: ['?0', 'null'] } } ,
+     *         { foo : ?0 }
+     *       ]
+     *     },
+     *     {
+     *       $or : [
+     *         { $expr: { $eq: ['?1', 'null'] } } ,
+     *         { bar : ?1 }
+     *       ]
+     *     }
+     *   ]
+     * }
+     *
+     * i.e. either the provided param ("foo" or "bar") is null, OR match records that contain the provided value for
+     * "foo" or "bar".
+     *
+     * There are multiple similar queries to account for a date range (i.e. without a date range, up to a particular
+     * date, from a particular date, or between a particular date.
+     *
      */
-    Page<Score> findByRoutineIdAndDateTimeBefore(Pageable pageConstraints, String routineId, LocalDateTime to);
+
+    /**
+     * Find all scores with optional routine ID and user ID.
+     * @param pageConstraints Constraints for paging
+     * @param routineId Routine ID. Can be null.
+     * @param userId User ID. Can be null.
+     * @return Returns all scores where fields match provided parameters, and non-provided optional parameters are
+     *         ignored.
+     */
+    @Query("{ $and: [ { $or : [ { $expr: { $eq: ['?0', 'null'] } } , { routineId : ?0 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { userId : ?1 } ] } " +
+                   "] } ")
+    Page<Score> findWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+                                                   Optional<String> routineId,
+                                                   Optional<String> userId);
+
+    /**
+     * Find all scores up to a provided date, with optional routine ID and user ID.
+     * @param pageConstraints Constraints for paging
+     * @param to Date/time to get scores up to
+     * @param routineId Routine ID. Can be null.
+     * @param userId User ID. Can be null.
+     * @return Returns all scores up to provided date where fields match provided parameters, and non-provided optional
+     *         parameters are ignored.
+     */
+    @Query("{ $and: [ { dateTime: { $lte: { $date: '?0' } } }," +
+                     "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { routineId : ?1 } ] }," +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] } " +
+                   "] }")
+    Page<Score> findToDateWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+                                                         LocalDateTime to,
+                                                         Optional<String> routineId,
+                                                         Optional<String> userId);
+
+    /**
+     * Find all scores from a provided date, with optional routine ID and user ID.
+     * @param pageConstraints Constraints for paging
+     * @param from Date/time to get scores from
+     * @param routineId Routine ID. Can be null.
+     * @param userId User ID. Can be null.
+     * @return Returns all scores from provided date where fields match provided parameters, and non-provided optional
+     *         parameters are ignored.
+     */
+    @Query("{ $and: [ { dateTime: { $gte: { $date: '?0' } } }," +
+                     "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { routineId : ?1 } ] }," +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] } " +
+                   "] }")
+    Page<Score> findFromDateWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+                                                           LocalDateTime from,
+                                                           Optional<String> routineId,
+                                                           Optional<String> userId);
+
+    /**
+     * Find all scores between two provided dates, with optional routine ID and user ID.
+     * @param pageConstraints Constraints for paging
+     * @param from Start point in date range to get scores between
+     * @param to End point in date range to get scores between
+     * @param routineId Routine ID. Can be null.
+     * @param userId User ID. Can be null.
+     * @return Returns all scores between provided dates where fields match provided parameters, and non-provided optional
+     *         parameters are ignored.
+     */
+    @Query("{ $and: [ { dateTime: { $gte: { $date: '?0' }, $lte: { $date: '?1' } } }," +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { routineId : ?2 } ] }," +
+                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { userId : ?3 } ] } " +
+                   "] }")
+    Page<Score> findBetweenDatesWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+                                                               LocalDateTime from,
+                                                               LocalDateTime to,
+                                                               Optional<String> routineId,
+                                                               Optional<String> userId);
 }

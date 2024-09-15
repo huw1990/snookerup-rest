@@ -105,7 +105,8 @@ public class ScoreControllerTests {
         LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
 
         // Set mock expectations
-        when(mockScoreRepository.findByUserId(any(Pageable.class), eq(PLAYER_ID_2))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.empty()), eq(Optional.of(PLAYER_ID_2))))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
@@ -134,7 +135,8 @@ public class ScoreControllerTests {
         LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
 
         // Set mock expectations
-        when(mockScoreRepository.findByUserIdAndRoutineId(any(Pageable.class), eq(PLAYER_ID_2), eq(ROUTINE_ID_2))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.of(ROUTINE_ID_2)), eq(Optional.of(PLAYER_ID_2))))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
@@ -159,7 +161,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findByUserIdAndRoutineId(any(Pageable.class), eq(PLAYER_ID_2), eq(ROUTINE_ID_1))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.of(ROUTINE_ID_1)), eq(Optional.of(PLAYER_ID_2))))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of());
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(0);
@@ -187,7 +190,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findAll(any(Pageable.class))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne, scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(2);
@@ -215,7 +219,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findByRoutineId(any(Pageable.class), eq(ROUTINE_ID_2))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.of(ROUTINE_ID_2)), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
@@ -240,7 +245,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findAll(any(Pageable.class))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of());
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(0);
@@ -268,7 +274,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findAll(any(Pageable.class))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne, scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(2);
@@ -298,7 +305,8 @@ public class ScoreControllerTests {
         Page<Score> mockScoresPage = mock(Page.class);
 
         // Set mock expectations
-        when(mockScoreRepository.findAll(any(Pageable.class))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne, scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(2);
@@ -328,7 +336,8 @@ public class ScoreControllerTests {
         LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
 
         // Set mock expectations
-        when(mockScoreRepository.findByDateTimeBefore(any(Pageable.class), eq(toDate))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findToDateWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(toDate), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreOne));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
@@ -357,7 +366,8 @@ public class ScoreControllerTests {
         LocalDateTime fromDate = LocalDateTime.parse(fromDateString, DATE_FORMATTER);
 
         // Set mock expectations
-        when(mockScoreRepository.findByDateTimeAfter(any(Pageable.class), eq(fromDate))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findFromDateWithOptionalRoutineIdAndUserId(any(Pageable.class), eq(fromDate), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
@@ -388,7 +398,9 @@ public class ScoreControllerTests {
         LocalDateTime toDate = LocalDateTime.parse(toDateString, DATE_FORMATTER);
 
         // Set mock expectations
-        when(mockScoreRepository.findByDateTimeBetween(any(Pageable.class), eq(fromDate), eq(toDate))).thenReturn(mockScoresPage);
+        when(mockScoreRepository.findBetweenDatesWithOptionalRoutineIdAndUserId(any(Pageable.class),
+                eq(fromDate), eq(toDate), eq(Optional.empty()), eq(Optional.empty())))
+                .thenReturn(mockScoresPage);
         when(mockScoresPage.getContent()).thenReturn(List.of(scoreTwo));
         when(mockScoresPage.getNumber()).thenReturn(0);
         when(mockScoresPage.getSize()).thenReturn(1);
