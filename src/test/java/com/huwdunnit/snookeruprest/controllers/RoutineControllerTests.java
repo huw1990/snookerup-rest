@@ -3,6 +3,7 @@ package com.huwdunnit.snookeruprest.controllers;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.db.RoutineRepository;
 import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
+import com.huwdunnit.snookeruprest.model.Balls;
 import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.RoutineListResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,30 +27,27 @@ import static org.mockito.Mockito.*;
 public class RoutineControllerTests {
 
     private static final String LINEUP_TITLE = "The Line Up";
-    private static final String LINEUP_DESC = """
-            Arrange all reds in a line up the middle of the table, in line with the blue, pink, and black spots.
-            
-            Pot the balls in order (i.e. red, colour, red, and so on), trying to make as high a break as possible.
-            
-            Can you clear the table?""";
+    private static final String LINEUP_DESC_LINE_1 = "Arrange all reds in a line up the middle of the table, in line with the blue, pink, and black spots.";
+    private static final String LINEUP_DESC_LINE_2 = "Pot the balls in order (i.e. red, colour, red, and so on), trying to make as high a break as possible.";
+    private static final String LINEUP_DESC_LINE_3 = "Can you clear the table?";
 
     private static final String T_LINEUP_TITLE = "The T Line Up";
-    private static final String T_LINEUP_DESC = """
-            Arrange the reds in three lines of five reds, first between pink and black, then either side of the pink, to form a "T" shape.
-            
-            Pot the balls in order (i.e. red, colour, red, and so on), trying to make as high a break as possible.
-            
-            In this routine, all reds are nearer the pink and black, so this replicates what you might see in a match, more than the Line Up would.
-            
-            Can you clear the table?""";
+    private static final String T_LINEUP_DESC_LINE_1 = "Arrange the reds in three lines of five reds, first between pink and black, then either side of the pink, to form a \"T\" shape.";
+    private static final String T_LINEUP_DESC_LINE_2 = "Pot the balls in order (i.e. red, colour, red, and so on), trying to make as high a break as possible.";
+    private static final String T_LINEUP_DESC_LINE_3 = "In this routine, all reds are nearer the pink and black, so this replicates what you might see in a match, more than the Line Up would.";
+    private static final String T_LINEUP_DESC_LINE_4 = "Can you clear the table?";
 
     private static final String CLEARING_COLOURS_TITLE = "Clearing the Colours";
-    private static final String CLEARING_COLOURS_DESC = """
-            Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.""";
-    private static final String TAG_BEGINNER = "beginner";
-    private static final String TAG_INTER = "intermediate";
+    private static final String CLEARING_COLOURS_DESC = "Put all colours on their spots, then try to clear them in order, i.e. yellow, green, brown, blue, pink, black.";
     private static final String TAG_BREAK_BUILDING = "break-building";
     private static final String TAG_POSITION = "positional-play";
+    private static final String REDS_UNIT = "reds";
+    private static final String ALL_COLOURS = "all";
+    private static final String JUST_BLACK_COLOUR = "black";
+    private static final String JUST_PINK_COLOUR = "pink";
+    private static final String PINK_AND_BLACK_COLOURS = "pink,black";
+    private static final String IMAGE_PATH_1 = "/path/to/image/1";
+    private static final String IMAGE_PATH_2 = "/path/to/image/2";
 
     private RoutineRepository mockRoutineRepository;
 
@@ -171,7 +170,7 @@ public class RoutineControllerTests {
         Routine clearingColoursRoutine = getClearingTheColoursRoutine();
         clearingColoursRoutine.setId(IdGenerator.createNewId());
         Page<Routine> mockRoutinesPage = mock(Page.class);
-        List<String> tagList = List.of(TAG_BEGINNER);
+        List<String> tagList = List.of(TAG_BREAK_BUILDING);
 
         // Set mock expectations
         when(mockRoutineRepository.findByTagsIn(any(Pageable.class), eq(tagList))).thenReturn(mockRoutinesPage);
@@ -235,22 +234,43 @@ public class RoutineControllerTests {
     }
 
     private Routine getLineUpRoutine() {
-        return createRoutine(LINEUP_TITLE, LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
+        return Routine.builder()
+                .title(LINEUP_TITLE)
+                .description(List.of(LINEUP_DESC_LINE_1, LINEUP_DESC_LINE_2, LINEUP_DESC_LINE_3))
+                .tags(List.of(TAG_BREAK_BUILDING, TAG_POSITION))
+                .balls(Balls.builder()
+                        .options(IntStream.rangeClosed(1, 15).boxed().toList())
+                        .unit(REDS_UNIT)
+                        .build())
+                .cushionLimits(List.of(0, 3, 5, 7))
+                .colours(List.of(ALL_COLOURS, JUST_BLACK_COLOUR))
+                .images(List.of(IMAGE_PATH_1, IMAGE_PATH_2))
+                .build();
     }
 
     private Routine getTLineUpRoutine() {
-        return createRoutine(T_LINEUP_TITLE, T_LINEUP_DESC, List.of(TAG_INTER, TAG_BREAK_BUILDING, TAG_POSITION));
+        return Routine.builder()
+                .title(T_LINEUP_TITLE)
+                .description(List.of(T_LINEUP_DESC_LINE_1, T_LINEUP_DESC_LINE_2, T_LINEUP_DESC_LINE_3, T_LINEUP_DESC_LINE_4))
+                .tags(List.of(TAG_BREAK_BUILDING, TAG_POSITION))
+                .balls(Balls.builder()
+                        .options(IntStream.rangeClosed(3, 15).boxed().toList())
+                        .unit(REDS_UNIT)
+                        .build())
+                .cushionLimits(List.of(0, 3, 5, 7))
+                .colours(List.of(ALL_COLOURS, JUST_BLACK_COLOUR, JUST_PINK_COLOUR, PINK_AND_BLACK_COLOURS))
+                .images(List.of(IMAGE_PATH_1, IMAGE_PATH_2))
+                .build();
     }
 
     private Routine getClearingTheColoursRoutine() {
-        return createRoutine(CLEARING_COLOURS_TITLE, CLEARING_COLOURS_DESC, List.of(TAG_BEGINNER, TAG_POSITION));
-    }
-
-    private Routine createRoutine(String title, String description, List<String> tags) {
-        Routine routine = new Routine();
-        routine.setTitle(title);
-        routine.setDescription(description);
-        routine.setTags(tags);
-        return routine;
+        return Routine.builder()
+                .title(CLEARING_COLOURS_TITLE)
+                .description(List.of(CLEARING_COLOURS_DESC))
+                .tags(List.of(TAG_BREAK_BUILDING, TAG_POSITION))
+                .cushionLimits(List.of(0, 3, 5, 7))
+                .images(List.of(IMAGE_PATH_1))
+                .canLoop(true)
+                .build();
     }
 }
