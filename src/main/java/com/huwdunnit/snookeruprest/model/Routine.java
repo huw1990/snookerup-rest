@@ -34,4 +34,6 @@ public class Routine {
     private List<String> images;
 
     private boolean canLoop;
+
+    private List<String> ballStriking;
 }
