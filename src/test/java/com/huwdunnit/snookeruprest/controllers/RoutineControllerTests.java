@@ -8,6 +8,7 @@ import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.RoutineListResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -78,6 +79,25 @@ public class RoutineControllerTests {
         assertEquals(expectedRoutine, addedRoutine);
 
         verify(mockRoutineRepository).insert(any(Routine.class));
+    }
+
+    @Test
+    public void addRoutine_Should_ThrowException_When_UserWithDuplicateEmailAdded() {
+        // Define variables
+        Routine routineToAdd = getLineUpRoutine();
+
+        // Set mock expectations
+        when(mockRoutineRepository.insert(any(Routine.class))).thenThrow(new DuplicateKeyException("Duplicate title"));
+
+        // Execute method under test
+        try {
+            routineController.addRoutine(routineToAdd);
+            fail("Expected DuplicateKeyException to be thrown");
+        } catch (DuplicateKeyException ex) {
+            // Exception expected, test passed
+        }
+
+        // Verify
     }
 
     @Test

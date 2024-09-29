@@ -3,6 +3,7 @@ package com.huwdunnit.snookeruprest.controllers;
 import com.huwdunnit.snookeruprest.BaseIT;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
 import com.huwdunnit.snookeruprest.model.Routine;
+import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import com.huwdunnit.snookeruprest.security.Roles;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +40,28 @@ public class RoutineControllerTestsIT extends BaseIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void addRoutine_Should_Return400Response_When_TitleAlreadyExists() throws Exception {
+        Routine routineToAdd = getLineUpRoutine();
+
+        // Add user to DB before running test
+        Routine existingRoutine = getLineUpRoutine();
+        existingRoutine.setId(IdGenerator.createNewId());
+        routineRepository.insert(existingRoutine);
+
+        // Now add same user via REST (error expected)
+        String requestBody = objectMapper.writeValueAsString(routineToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/routines")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value(ErrorResponse.DUPLICATE_FIELD))
+                .andReturn();
     }
 
     @WithMockUser(authorities = Roles.ADMIN)
