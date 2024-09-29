@@ -119,15 +119,27 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @param pageConstraints Constraints for paging
      * @param routineId Routine ID. Can be null.
      * @param userId User ID. Can be null.
+     * @param cushionLimit The cushion limit on the score. Can be null.
+     * @param colours Any colours restraints applied to the score. Can be null.
+     * @param numBalls The configured number of balls applied to the routine. Can be null.
+     * @param loop Specifies whether this score is with looping of the routine. Can be null.
      * @return Returns all scores where fields match provided parameters, and non-provided optional parameters are
      *         ignored.
      */
     @Query("{ $and: [ { $or : [ { $expr: { $eq: ['?0', 'null'] } } , { routineId : ?0 } ] }, " +
-                     "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { userId : ?1 } ] } " +
+                     "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { userId : ?1 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { cushionLimit : ?2 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { colours : ?3 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?4', 'null'] } } , { numBalls : ?4 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?5', 'null'] } } , { loop : ?5 } ] } " +
                    "] } ")
-    Page<Score> findWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+    Page<Score> findWithOptionalRoutineIdAndUserIdAndScoreParams(Pageable pageConstraints,
                                                    Optional<String> routineId,
-                                                   Optional<String> userId);
+                                                   Optional<String> userId,
+                                                   Optional<Integer> cushionLimit,
+                                                   Optional<String> colours,
+                                                   Optional<Integer> numBalls,
+                                                   Optional<Boolean> loop);
 
     /**
      * Find all scores up to a provided date, with optional routine ID and user ID.
@@ -135,17 +147,29 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @param to Date/time to get scores up to
      * @param routineId Routine ID. Can be null.
      * @param userId User ID. Can be null.
+     * @param cushionLimit The cushion limit on the score. Can be null.
+     * @param colours Any colours restraints applied to the score. Can be null.
+     * @param numBalls The configured number of balls applied to the routine. Can be null.
+     * @param loop Specifies whether this score is with looping of the routine. Can be null.
      * @return Returns all scores up to provided date where fields match provided parameters, and non-provided optional
      *         parameters are ignored.
      */
     @Query("{ $and: [ { dateTime: { $lte: { $date: '?0' } } }," +
                      "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { routineId : ?1 } ] }," +
-                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] } " +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { cushionLimit : ?3 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?4', 'null'] } } , { colours : ?4 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?5', 'null'] } } , { numBalls : ?5 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?6', 'null'] } } , { loop : ?6 } ] } " +
                    "] }")
-    Page<Score> findToDateWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+    Page<Score> findToDateWithOptionalRoutineIdAndUserIdAndScoreParams(Pageable pageConstraints,
                                                          LocalDateTime to,
                                                          Optional<String> routineId,
-                                                         Optional<String> userId);
+                                                         Optional<String> userId,
+                                                         Optional<Integer> cushionLimit,
+                                                         Optional<String> colours,
+                                                         Optional<Integer> numBalls,
+                                                         Optional<Boolean> loop);
 
     /**
      * Find all scores from a provided date, with optional routine ID and user ID.
@@ -153,17 +177,29 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @param from Date/time to get scores from
      * @param routineId Routine ID. Can be null.
      * @param userId User ID. Can be null.
+     * @param cushionLimit The cushion limit on the score. Can be null.
+     * @param colours Any colours restraints applied to the score. Can be null.
+     * @param numBalls The configured number of balls applied to the routine. Can be null.
+     * @param loop Specifies whether this score is with looping of the routine. Can be null.
      * @return Returns all scores from provided date where fields match provided parameters, and non-provided optional
      *         parameters are ignored.
      */
     @Query("{ $and: [ { dateTime: { $gte: { $date: '?0' } } }," +
                      "{ $or : [ { $expr: { $eq: ['?1', 'null'] } } , { routineId : ?1 } ] }," +
-                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] } " +
+                     "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { userId : ?2 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { cushionLimit : ?3 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?4', 'null'] } } , { colours : ?4 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?5', 'null'] } } , { numBalls : ?5 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?6', 'null'] } } , { loop : ?6 } ] } " +
                    "] }")
-    Page<Score> findFromDateWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+    Page<Score> findFromDateWithOptionalRoutineIdAndUserIdAndScoreParams(Pageable pageConstraints,
                                                            LocalDateTime from,
                                                            Optional<String> routineId,
-                                                           Optional<String> userId);
+                                                           Optional<String> userId,
+                                                           Optional<Integer> cushionLimit,
+                                                           Optional<String> colours,
+                                                           Optional<Integer> numBalls,
+                                                           Optional<Boolean> loop);
 
     /**
      * Find all scores between two provided dates, with optional routine ID and user ID.
@@ -172,16 +208,28 @@ public interface ScoreRepository extends MongoRepository<Score, String> {
      * @param to End point in date range to get scores between
      * @param routineId Routine ID. Can be null.
      * @param userId User ID. Can be null.
+     * @param cushionLimit The cushion limit on the score. Can be null.
+     * @param colours Any colours restraints applied to the score. Can be null.
+     * @param numBalls The configured number of balls applied to the routine. Can be null.
+     * @param loop Specifies whether this score is with looping of the routine. Can be null.
      * @return Returns all scores between provided dates where fields match provided parameters, and non-provided optional
      *         parameters are ignored.
      */
     @Query("{ $and: [ { dateTime: { $gte: { $date: '?0' }, $lte: { $date: '?1' } } }," +
                      "{ $or : [ { $expr: { $eq: ['?2', 'null'] } } , { routineId : ?2 } ] }," +
-                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { userId : ?3 } ] } " +
+                     "{ $or : [ { $expr: { $eq: ['?3', 'null'] } } , { userId : ?3 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?4', 'null'] } } , { cushionLimit : ?4 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?5', 'null'] } } , { colours : ?5 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?6', 'null'] } } , { numBalls : ?6 } ] }, " +
+                     "{ $or : [ { $expr: { $eq: ['?7', 'null'] } } , { loop : ?7 } ] } " +
                    "] }")
-    Page<Score> findBetweenDatesWithOptionalRoutineIdAndUserId(Pageable pageConstraints,
+    Page<Score> findBetweenDatesWithOptionalRoutineIdAndUserIdAndScoreParams(Pageable pageConstraints,
                                                                LocalDateTime from,
                                                                LocalDateTime to,
                                                                Optional<String> routineId,
-                                                               Optional<String> userId);
+                                                               Optional<String> userId,
+                                                               Optional<Integer> cushionLimit,
+                                                               Optional<String> colours,
+                                                               Optional<Integer> numBalls,
+                                                               Optional<Boolean> loop);
 }

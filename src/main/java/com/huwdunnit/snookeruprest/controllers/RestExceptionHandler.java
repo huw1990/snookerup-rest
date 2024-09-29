@@ -1,8 +1,6 @@
 package com.huwdunnit.snookeruprest.controllers;
 
-import com.huwdunnit.snookeruprest.exceptions.RoutineNotFoundException;
-import com.huwdunnit.snookeruprest.exceptions.ScoreNotFoundException;
-import com.huwdunnit.snookeruprest.exceptions.UserNotFoundException;
+import com.huwdunnit.snookeruprest.exceptions.*;
 import com.huwdunnit.snookeruprest.model.errors.ErrorResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +56,24 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.createScoreNotFoundErrorResponse();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler({RoutineForScoreNotFoundException.class})
+    public ResponseEntity<Object> handleRoutineForScoreNotFound(RoutineForScoreNotFoundException ex, WebRequest request) {
+        log.error("handleRoutineForScoreNotFound ex={}, request={}", ex, request);
+
+        ErrorResponse errorResponse = ErrorResponse.createRoutineForScoreNotFoundErrorResponse();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler({InvalidScoreFieldException.class})
+    public ResponseEntity<Object> handleInvalidScoreField(InvalidScoreFieldException ex, WebRequest request) {
+        log.error("handleInvalidScoreField ex={}, request={}", ex, request);
+
+        ErrorResponse errorResponse = ErrorResponse.createInvalidScoreFieldErrorResponse(ex.getFieldName());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
 }

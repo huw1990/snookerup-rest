@@ -24,4 +24,16 @@ public class Score {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = DATE_FORMAT)
     private LocalDateTime dateTime;
+
+    /** The restriction on the number of cushions allowed to be hit on this routine attempt. */
+    private Integer cushionLimit;
+
+    /** The specific configuration of colours used on this routine attempt. */
+    private String colours;
+
+    /** The specific configuration of balls used on this routine attempt. */
+    private Integer numBalls;
+
+    /** Whether this score (and it's value) is the number of successful loops of a routine. */
+    private boolean loop;
 }

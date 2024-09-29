@@ -2,6 +2,7 @@ package com.huwdunnit.snookeruprest.controllers;
 
 import com.huwdunnit.snookeruprest.BaseIT;
 import com.huwdunnit.snookeruprest.db.IdGenerator;
+import com.huwdunnit.snookeruprest.model.Routine;
 import com.huwdunnit.snookeruprest.model.Score;
 import com.huwdunnit.snookeruprest.model.User;
 import com.huwdunnit.snookeruprest.security.Roles;
@@ -48,8 +49,187 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     private static final String DATE_STRING_3 = "02/3/2024-19:25";
 
+    private static final String DATE_STRING_4 = "02/3/2024-19:30";
+
+    @Test
+    void addScore_Should_Return400BadRequest_When_ScoreIncludesInvalidRoutineId() throws Exception {
+        // No routines in DB, so routine ID in score won't exist
+
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Invalid routine ID"))
+                .andReturn();
+    }
+
+    @Test
+    void addScore_Should_Return400BadRequest_When_ScoreIncludesCushionLimitParamNotAllowedByRoutine() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setCushionLimits(null);
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setCushionLimit(3);
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Invalid field for routine"),
+                        jsonPath("$.context.field").value("cushionLimit"))
+                .andReturn();
+    }
+
+    @Test
+    void addScore_Should_Return400BadRequest_When_ScoreIncludesColoursParamNotAllowedByRoutine() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setColours(null);
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setColours("all");
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Invalid field for routine"),
+                        jsonPath("$.context.field").value("colours"))
+                .andReturn();
+    }
+
+    @Test
+    void addScore_Should_Return400BadRequest_When_ScoreIncludesNumBallsParamNotAllowedByRoutine() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setBalls(null);
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setNumBalls(10);
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Invalid field for routine"),
+                        jsonPath("$.context.field").value("numBalls"))
+                .andReturn();
+    }
+
+    @Test
+    void addScore_Should_Return400BadRequest_When_ScoreIncludesLoopParamNotAllowedByRoutine() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setCanLoop(false);
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setLoop(true);
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.errorMessage").value("Invalid field for routine"),
+                        jsonPath("$.context.field").value("loop"))
+                .andReturn();
+    }
+
+    @Test
+    void addScore_Should_Return201ResponseWithAddedScore_When_ExtraParamsProvidedAndAllAllowedByRoutine() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
+        int numBalls = 8;
+        int cushionLimit = 5;
+        String colours = "black";
+        User userForScore = this.getHendryUser();
+        userForScore.setId(PLAYER_ID_1);
+        Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
+        scoreToAdd.setNumBalls(numBalls);
+        scoreToAdd.setCushionLimit(cushionLimit);
+        scoreToAdd.setColours(colours);
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_1, DATE_FORMATTER));
+        String requestBody = objectMapper.writeValueAsString(scoreToAdd);
+
+        MvcResult result = mockMvc.perform(post("/api/v1/scores")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
+                        .with(user(getPrincipalForUser(userForScore))))
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.id").exists(),
+                        jsonPath("$.value").value(scoreToAdd.getValue()),
+                        jsonPath("$.userId").value(scoreToAdd.getUserId()),
+                        jsonPath("$.routineId").value(scoreToAdd.getRoutineId()),
+                        jsonPath("$.dateTime").value(scoreToAdd.getDateTime().format(DATE_FORMATTER)),
+                        jsonPath("$.cushionLimit").value(cushionLimit),
+                        jsonPath("$.colours").value(colours),
+                        jsonPath("$.numBalls").value(numBalls))
+                .andReturn();
+
+        // Get the score's ID so we can check it exists in the DB
+        Score scoreInResponse = objectMapper.readValue(result.getResponse().getContentAsString(), Score.class);
+        String addedScoreId = scoreInResponse.getId();
+
+        // Get the user by ID from the DB.
+        Optional<Score> opt = scoreRepository.findById(addedScoreId);
+
+        opt.ifPresentOrElse(
+                (scoreInDb) -> assertEquals(scoreInResponse, scoreInDb, "Score returned in response is different to score in DB"),
+                () -> fail("Score with ID from response not found in the DB")
+        );
+    }
+
     @Test
     void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReqAndScoreIsForCurrentUser() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
         User userForScore = this.getHendryUser();
         userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
@@ -85,6 +265,11 @@ public class ScoreControllerTestsIT extends BaseIT {
     @WithMockUser(authorities = Roles.ADMIN)
     @Test
     void addScore_Should_Return201ResponseWithAddedScore_When_DateIncludedInReqAndScoreIsForOtherUserButReqFromAdmin() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
         User userForScore = this.getHendryUser();
         userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
@@ -118,6 +303,11 @@ public class ScoreControllerTestsIT extends BaseIT {
 
     @Test
     void addScore_Should_Return201ResponseWithAddedScore_When_DateNotIncludedInReqAndScoreIsForCurrentUser() throws Exception {
+        // Add routine to DB before score that references it
+        Routine routineInDb = this.getLineUpRoutine();
+        routineInDb.setId(ROUTINE_ID_1);
+        routineRepository.insert(routineInDb);
+
         User userForScore = this.getHendryUser();
         userForScore.setId(PLAYER_ID_1);
         Score scoreToAdd = getScoreToAddWithoutDateTimeSet();
@@ -147,6 +337,231 @@ public class ScoreControllerTestsIT extends BaseIT {
                 (scoreInDb) -> assertEquals(scoreInResponse, scoreInDb, "Score returned in response is different to score in DB"),
                 () -> fail("Score with ID from response not found in the DB")
         );
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnOneScore_WhenReqContainsCushionLimitParamAndOnlyOneScoreWithThisProvided() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        int cushionLimit = 5;
+        scoreFourInDb.setCushionLimit(cushionLimit);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&cushionLimit={cushion-limit}",
+                        PLAYER_ID_2, pageSize, pageToGet, cushionLimit))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnOneScore_WhenReqContainsColoursParamAndOnlyOneScoreWithThisProvided() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        String colours = "black";
+        scoreFourInDb.setColours(colours);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&colours={colours}",
+                        PLAYER_ID_2, pageSize, pageToGet, colours))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnOneScore_WhenReqContainsNumBallsParamAndOnlyOneScoreWithThisProvided() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        int numBalls = 8;
+        scoreFourInDb.setNumBalls(numBalls);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&numBalls={num-balls}",
+                        PLAYER_ID_2, pageSize, pageToGet, numBalls))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnOneScore_WhenReqContainsLoopParamAndOnlyOneScoreWithThisProvided() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        boolean loop = true;
+        scoreFourInDb.setLoop(loop);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}&loop={loop}",
+                        PLAYER_ID_2, pageSize, pageToGet, loop))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScoresForUser_Should_ReturnOneScore_WhenReqContainsMultipleParamsAndOnlyOneScoreWithAllProvided() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        String colours = "black";
+        scoreFourInDb.setColours(colours);
+        int cushionLimit = 0;
+        scoreFourInDb.setCushionLimit(cushionLimit);
+        int numBalls = 8;
+        scoreFourInDb.setNumBalls(numBalls);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/users/{userId}/scores?pageSize={page-size}&pageNumber={page-number}" +
+                                "&colours={colours}&cushionLimit={cushion-limit}&numBalls={num-balls}",
+                        PLAYER_ID_2, pageSize, pageToGet, colours, cushionLimit, numBalls))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
     }
 
     @WithMockUser(authorities = Roles.ADMIN)
@@ -259,6 +674,231 @@ public class ScoreControllerTestsIT extends BaseIT {
                         jsonPath("$.scores[0].routineId").value(scoreTwoInDb.getRoutineId()),
                         jsonPath("$.scores[0].userId").value(scoreTwoInDb.getUserId()),
                         jsonPath("$.scores[0].dateTime").value(scoreTwoInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScores_Should_ReturnOneScore_WhenReqContainsCushionLimitParamAndOnlyOneScoreWithThisProvidedAndReqByAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        int cushionLimit = 5;
+        scoreFourInDb.setCushionLimit(cushionLimit);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&cushionLimit={cushion-limit}",
+                        pageSize, pageToGet, cushionLimit))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScores_Should_ReturnOneScore_WhenReqContainsColoursParamAndOnlyOneScoreWithThisProvidedAndReqByAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        String colours = "black";
+        scoreFourInDb.setColours(colours);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&colours={colours}",
+                        pageSize, pageToGet, colours))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScores_Should_ReturnOneScore_WhenReqContainsNumBallsParamAndOnlyOneScoreWithThisProvidedAndReqByAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        int numBalls = 8;
+        scoreFourInDb.setNumBalls(numBalls);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&numBalls={num-balls}",
+                        pageSize, pageToGet, numBalls))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScores_Should_ReturnOneScore_WhenReqContainsLoopParamAndOnlyOneScoreWithThisProvidedAndReqByAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        boolean loop = true;
+        scoreFourInDb.setLoop(loop);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}&loop={loop}",
+                        pageSize, pageToGet, loop))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
+                .andExpectAll(
+                        jsonPath("$.pageSize").value(pageSize),
+                        jsonPath("$.pageNumber").value(pageToGet),
+                        jsonPath("$.totalPages").value(expectedNumberOfPages),
+                        jsonPath("$.totalItems").value(expectedTotalItems));
+    }
+
+    @WithMockUser(authorities = Roles.ADMIN)
+    @Test
+    void getScores_Should_ReturnOneScore_WhenReqContainsMultipleParamsAndOnlyOneScoreWithAllProvidedAndReqByAdmin() throws Exception {
+        // Add scores to DB before running test
+        Score scoreOneInDb = getScoreOne();
+        scoreOneInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreOneInDb);
+        Score scoreTwoInDb = getScoreTwo();
+        scoreTwoInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreTwoInDb);
+        Score scoreThreeInDb = getScoreThree();
+        scoreThreeInDb.setId(IdGenerator.createNewId());
+        scoreRepository.insert(scoreThreeInDb);
+        Score scoreFourInDb = getScoreFour();
+        scoreFourInDb.setId(IdGenerator.createNewId());
+        int cushionLimit = 5;
+        scoreFourInDb.setCushionLimit(cushionLimit);
+        String colours = "black";
+        scoreFourInDb.setColours(colours);
+        int numBalls = 8;
+        scoreFourInDb.setNumBalls(numBalls);
+        scoreRepository.insert(scoreFourInDb);
+        // Get user for score
+        User hendryUser = getHendryUser();
+        hendryUser.setId(PLAYER_ID_2);
+
+        int pageSize = 50;
+        int pageToGet = 0;
+        int expectedNumberOfPages = 1;
+        int expectedTotalItems = 1;
+
+        // Get the first page of scores
+        mockMvc.perform(get("/api/v1/scores?pageSize={page-size}&pageNumber={page-number}" +
+                                "&cushionLimit={cushion-limit}&colours={colours}&numBalls={num-balls}",
+                        pageSize, pageToGet, cushionLimit, colours, numBalls))
+                .andExpect(status().isOk())
+                .andExpectAll(
+                        jsonPath("$.scores[0].id").value(scoreFourInDb.getId()),
+                        jsonPath("$.scores[0].value").value(scoreFourInDb.getValue()),
+                        jsonPath("$.scores[0].routineId").value(scoreFourInDb.getRoutineId()),
+                        jsonPath("$.scores[0].userId").value(scoreFourInDb.getUserId()),
+                        jsonPath("$.scores[0].dateTime").value(scoreFourInDb.getDateTime().format(DATE_FORMATTER)))
                 .andExpectAll(
                         jsonPath("$.pageSize").value(pageSize),
                         jsonPath("$.pageNumber").value(pageToGet),
@@ -685,6 +1325,15 @@ public class ScoreControllerTestsIT extends BaseIT {
         scoreToAdd.setUserId(PLAYER_ID_1);
         scoreToAdd.setRoutineId(ROUTINE_ID_1);
         scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_3, DATE_FORMATTER));
+        return scoreToAdd;
+    }
+
+    private Score getScoreFour() {
+        Score scoreToAdd = new Score();
+        scoreToAdd.setValue(130);
+        scoreToAdd.setUserId(PLAYER_ID_2);
+        scoreToAdd.setRoutineId(ROUTINE_ID_2);
+        scoreToAdd.setDateTime(LocalDateTime.parse(DATE_STRING_4, DATE_FORMATTER));
         return scoreToAdd;
     }
 
